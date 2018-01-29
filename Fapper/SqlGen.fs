@@ -1,4 +1,5 @@
-﻿module Fapper.SqlGen
+﻿module Fapper
+
 
 type Table = Table of string
     with
