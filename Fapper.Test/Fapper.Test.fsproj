@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Fapper\Fapper.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="trivialtestrunner" Version="1.0.0" />
+  </ItemGroup>
+
 </Project>
