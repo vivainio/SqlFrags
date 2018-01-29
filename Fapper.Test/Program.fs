@@ -1,7 +1,7 @@
 ﻿// Learn more about F# at http://fsharp.org
 
 open System
-open Fapper
+open Fapper.SqlGen
 open TrivialTestRunner
 
 let rendersTo expected (frags: Frag list)  = 
