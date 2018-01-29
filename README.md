@@ -1,4 +1,4 @@
-# Fapper - an SQL generator for F#
+# Fapper - a SQL generator for F#
 
 ## The problem:
 
