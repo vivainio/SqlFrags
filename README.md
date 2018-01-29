@@ -33,7 +33,10 @@ update employee\nset salary = 10, Name = 'heimo'\nwhere foo > bar
 
 That should make it a bit harder to screw up.
 
+## Installation
+
+https://www.nuget.org/packages/Fapper
+
 ## License
 
 MIT
-
