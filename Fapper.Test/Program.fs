@@ -23,14 +23,17 @@ type Tests() =
             Update Emp
             Set [
                 "salary", "10"
-                "Name", "'heimo'"
+                "name", "'heimo'"
+                "address", "@addressparam"
+
             ]
             WhereS "foo > bar"
         ]
-        upd |> rendersTo "update employee\nset salary = 10, Name = 'heimo'\nwhere foo > bar"
+        upd |> rendersTo "update employee\nset salary = 10, name = 'heimo', address = @addressparam\nwhere foo > bar"
 
         //upd |> (serializeSql SqlSyntax.Any) |> printVerbatim
 
+        // this is not legal sql. Fapper does absolutely no structure validity checking whatsoever
         let query = [
             Select <| Emp.Cols ["id";"name"; "salary"; "team"]
             SelectAs [Emp?Foo, "testalias"]
@@ -39,15 +42,14 @@ type Tests() =
             Many [
                 Skip
                 WhereS "foo > bar"
-
                 Skip
             ]
-            JoinOn( Org.Col "ID", Emp.Col "OrgID", Table "EMPLOYEE", "")
+            JoinOn( Org.Col "ID", Emp.Col "OrgID", Table "OrgAlias", "")
             Where [Emp?Company == Org?Id]
             GroupBy ["team"]
             OrderBy ["salary"]
         ]
-        query |> rendersTo "select employee.id, employee.name, employee.salary, employee.team\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\n\nwhere foo > bar\n\ninner join organization EMPLOYEE on employee.OrgID=EMPLOYEE.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
+        query |> rendersTo "select employee.id, employee.name, employee.salary, employee.team\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\n\nwhere foo > bar\n\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
 
         let nested = [
             SelectS ["*"]
