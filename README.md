@@ -125,7 +125,7 @@ It's also mildly amusing, for the time being.
 
 ### Is it tied to Dapper somehow?
 
-No. In fact I use it directly with conn.CreateCommand() and untypede query.ExecuteReader(). Helpers for doing that may emerge as part
+No. In fact I use it directly with conn.CreateCommand() and untyped query.ExecuteReader(). Helpers for doing that may emerge as part
 the wider Fapper suite in separate modules. There are no dependencies - lists in, strings out.
 
 ### What databases does it support?
