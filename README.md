@@ -125,7 +125,8 @@ It's also mildly amusing, for the time being.
 
 ### Is it tied to Dapper somehow?
 
-No. In fact I use it directly with conn.CreateCommand() and query.ExecuteReader() and the untyped readers, using SqlClient or ODP.net data providers.
+No. In fact I use it directly with conn.CreateCommand() and untypede query.ExecuteReader(). Helpers for doing that may emerge as part
+the wider Fapper suite in separate modules. There are no dependencies - lists in, strings out.
 
 ### What databases does it support?
 
@@ -135,7 +136,7 @@ SqlSyntax.Any is used.
 
 ### What databases does it support?
 
-I'm using it against Oracle and MSSQL.
+I'm using it against Oracle and MSSQL, using SqlClient or ODP.net data providers.
 
 ## Installation
 
