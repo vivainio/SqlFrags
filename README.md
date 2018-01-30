@@ -129,7 +129,7 @@ No. In fact I use it directly with conn.CreateCommand() and query.ExecuteReader(
 
 ### What databases does it support?
 
-All of them, but depends. E.g. "Page" fragment won't work in old Oracle versions. If your SQL contains @ like query parameters the won't work
+All of them, but depends. E.g. "Page" fragment won't work in old Oracle versions. If your SQL contains @ like query parameters they won't work
 with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based Sql syntax, but currently
 SqlSyntax.Any is used.
 
