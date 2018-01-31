@@ -134,10 +134,6 @@ All of them, but depends. E.g. "Page" fragment won't work in old Oracle versions
 with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based Sql syntax, but currently
 SqlSyntax.Any is used.
 
-### What databases does it support?
-
-I'm using it against Oracle and MSSQL, using SqlClient or ODP.net data providers.
-
 ## Installation
 
 https://www.nuget.org/packages/Fapper
