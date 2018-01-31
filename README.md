@@ -137,7 +137,7 @@ but currently only SqlSyntax.Any is used.
 ### Why not use XXX or YYY instead?
 
 Fapper allows you to compose queries from fragments. You can create the fragments (or lists of fragments) in functions, assign
-repeated fragments to variables, etc. This is like creating DOM with Suave.Html, Giraffe ViewModel or Elm.
+repeated fragments to variables, etc. This is like creating HTML with Suave.Html, Giraffe ViewModel or Elm.
 
 You don't need to have access to database schema (yet alone live database, like with SqlProvider) to create queries. This helps if
 you are building software against arbitrary databases (think tools like Django Admin), or where schema is configurable.
