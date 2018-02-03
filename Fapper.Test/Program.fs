@@ -93,11 +93,11 @@ type Tests() =
         inq |> rendersTo "select *\nfrom TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
     
         // select stuff with --> and --->
-        let easySelectRaw = [ Emp --> [ "Salary"; "Name" ] ];
-        easySelectRaw |> rendersTo "select Salary, Name\nfrom employee"
+        [ Emp --> [ "Salary"; "Name" ] ]
+        |> rendersTo "select Salary, Name\nfrom employee"
 
-        let easySelect = [ Emp ---> [ Emp?Salary; Emp?Name ] ] 
-        easySelect |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
+        [ Emp ---> [ Emp?Salary; Emp?Name ] ] 
+        |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
         // ===^ (where condition without quoting)
         [
             Emp --> ["*"]

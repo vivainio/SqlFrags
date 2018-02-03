@@ -103,6 +103,31 @@ If you wanted "outer", just pass "outer" as the last argument to JoinOn (empty s
 And what are those "Many" and Skip parts? They are provided for convenience, when splicing sublists in programmatically
 generated queries.
 
+Operator overloading is not for the faint of hearth, but neither is Fapper. There are some overloaded operators to simplify select
+and where clauses:
+
+```fsharp
+
+// select stuff with --> and --->
+[ Emp --> [ "Salary"; "Name" ] ]
+|> rendersTo "select Salary, Name\nfrom employee"
+
+[ Emp ---> [ Emp?Salary; Emp?Name ] ]
+|> rendersTo "select employee.Salary, employee.Name\nfrom employee"
+// ===^ (where condition without quoting)
+[
+    Emp --> ["*"]
+    Where [Emp?ID ===^ "@ID"]
+] |> rendersTo "select *\nfrom employee\nwhere employee.ID=@ID"
+
+// === (where condition with quoting)
+[
+    Emp --> ["*"]
+    Where [Emp?ID === "jorma"]
+] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+
+```
+
 
 ## FAQ
 
@@ -131,7 +156,7 @@ the wider Fapper suite in separate modules. There are no dependencies - lists in
 ### What databases does it support?
 
 All of them, but depends. E.g. "Page" fragment won't work in old Oracle versions. If your SQL contains @ like query parameters they won't work
-with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based Sql syntax, 
+with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based on Sql syntax,
 but currently only SqlSyntax.Any is used.
 
 ### Why not use XXX or YYY instead?
@@ -148,13 +173,13 @@ The codebase is trivial mapping of DU cases to emitted strings:
 
 ```fsharp
 let rec serializeFrag (syntax: SqlSyntax) frag =
-    match frag with 
+    match frag with
     | SelectS els -> "select " + colonList els
-    | Select cols -> 
+    | Select cols ->
         "select " +
             (cols |> Seq.map (fun c -> c.Str) |> colonList)
     | SelectAs cols ->
-        "select " + 
+        "select " +
             (cols |> Seq.map (fun (c,alias) -> sprintf "%s as %s" c.Str alias) |> colonList)
     | FromS els -> "from " + colonList els
     | From (Table t) -> "from " + t
