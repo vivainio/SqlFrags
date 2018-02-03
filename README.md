@@ -112,7 +112,7 @@ There aren't for .NET. Search for yourself.
 
 ### Can I use this on C#?
 
-Nope, too tied to F# data structures. I would love for someone to "steal the idea" and do a similar thing for C# (maybe with fluent builder pattern or whatever).
+Nope, too tied to F# data structures. Similar "mechanical SQL emission" philosophy for C# is implemented e.g. in https://github.com/sqlkata/querybuilder
 
 ### What's up with the name?
 
