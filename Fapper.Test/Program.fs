@@ -92,6 +92,25 @@ type Tests() =
 
         inq |> rendersTo "select *\nfrom TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
     
+        // select stuff with --> and --->
+        let easySelectRaw = [ Emp --> [ "Salary"; "Name" ] ];
+        easySelectRaw |> rendersTo "select Salary, Name\nfrom employee"
+
+        let easySelect = [ Emp ---> [ Emp?Salary; Emp?Name ] ] 
+        easySelect |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
+        // ===^ (where condition without quoting)
+        [
+            Emp --> ["*"]
+            Where [Emp?ID ===^ "@ID"] 
+        ] |> rendersTo "select *\nfrom employee\nwhere employee.ID=@ID"
+
+        // === (where condition with quoting)
+        [
+            Emp --> ["*"]
+            Where [Emp?ID === "jorma"] 
+        ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+
+
 [<EntryPoint>]
 let main argv =
     TRunner.AddTests<Tests>()

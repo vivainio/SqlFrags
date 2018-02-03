@@ -86,6 +86,7 @@ let Exists (frags: Frag seq) =
         Nest frags
     ]
 
+// shorthands for SELECTing stuff
 let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]
 let (--->) (l: Table) (rs: ColRef seq) = Many [Select rs; From l]
 
