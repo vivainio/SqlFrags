@@ -112,7 +112,7 @@ There aren't for .NET. Search for yourself.
 
 ### Can I use this on C#?
 
-Nope, too tied to F# data structures. I would love for someone to "steal the idea" and do a similar thing for C# (maybe with fluent builder pattern or whatever).
+Nope, too tied to F# data structures. Similar "mechanical SQL emission" philosophy for C# is implemented e.g. in https://github.com/sqlkata/querybuilder
 
 ### What's up with the name?
 
@@ -125,18 +125,44 @@ It's also mildly amusing, for the time being.
 
 ### Is it tied to Dapper somehow?
 
-No. In fact I use it directly with conn.CreateCommand() and untypede query.ExecuteReader(). Helpers for doing that may emerge as part
+No. In fact I use it directly with conn.CreateCommand() and untyped query.ExecuteReader(). Helpers for doing that may emerge as part
 the wider Fapper suite in separate modules. There are no dependencies - lists in, strings out.
 
 ### What databases does it support?
 
 All of them, but depends. E.g. "Page" fragment won't work in old Oracle versions. If your SQL contains @ like query parameters they won't work
-with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based Sql syntax, but currently
-SqlSyntax.Any is used.
+with oracle (and I didn't yet do a helper for that). You get the idea. The API has support to branch the rendering based Sql syntax, 
+but currently only SqlSyntax.Any is used.
 
-### What databases does it support?
+### Why not use XXX or YYY instead?
 
-I'm using it against Oracle and MSSQL, using SqlClient or ODP.net data providers.
+Fapper allows you to compose queries from fragments. You can create the fragments (or lists of fragments) in functions, assign
+repeated fragments to variables, etc. This is like creating HTML with Suave.Html, Giraffe ViewModel or Elm.
+
+You don't need to have access to database schema (yet alone live database, like with SqlProvider) to create queries. This helps if
+you are building software against arbitrary databases (think tools like Django Admin), or where schema is configurable.
+
+You don't need to learn to "trick" the ORM to emit the SQL you want. What you write is what you get.
+
+The codebase is trivial mapping of DU cases to emitted strings:
+
+```fsharp
+let rec serializeFrag (syntax: SqlSyntax) frag =
+    match frag with 
+    | SelectS els -> "select " + colonList els
+    | Select cols -> 
+        "select " +
+            (cols |> Seq.map (fun c -> c.Str) |> colonList)
+    | SelectAs cols ->
+        "select " + 
+            (cols |> Seq.map (fun (c,alias) -> sprintf "%s as %s" c.Str alias) |> colonList)
+    | FromS els -> "from " + colonList els
+    | From (Table t) -> "from " + t
+...
+```
+
+So, if you want to add something you need, you just do it. Copy the SqlGen.fs to your project, or make a PR and join the Fapper family.
+
 
 ## Installation
 
