@@ -1,5 +1,9 @@
 ﻿module Fapper.SqlGen
 
+type SqlSyntax =
+| Any
+| Ora
+
 
 type Table = Table of string
     with
@@ -37,6 +41,46 @@ with
                    | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value
                    | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
                    | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
+
+
+
+type DDLType = 
+    | Int
+    | SmallInt
+    | BigInt
+    | TinyInt
+    | Float
+    | Real
+    | Date
+    | DateTime
+    | DateTime2
+    | VarChar of int
+    | Decimal of int*int
+    | Text
+    | NotNull of DDLType
+
+type DDLCol = (string*DDLType)
+
+module DDLCol =
+    let rec typeToString (syntax: SqlSyntax) (t: DDLType) =
+        match t with
+        | Int -> "int"
+        | SmallInt -> "smallint"
+        | BigInt -> "bigint"
+        | TinyInt -> "tinyint"
+        | Float -> "float"
+        | Real -> "real"
+        | Date -> "date"
+        | DateTime -> "datetime"
+        | DateTime2 -> "datetime2"
+        | VarChar c -> sprintf "varchar(%d)" c
+        | Decimal(a,b) -> sprintf "decimal(%d,%d)" a b
+        | Text -> "text"
+        | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
+
+
+// inline operators
+
 // compare column against column
 let (==) (l: ColRef) (r: ColRef) = ColsEq(l,r)
 // compare column against const, user needs to add quotes if needed
@@ -47,6 +91,13 @@ let (===) (l: ColRef) (r: string) = l ===^ (sqlQuoted r)
 let (<=>) (l: ColRef) (r: string) = ConstBinOp("<>", l,r) 
 let IsAny (l: ColRef) (r: string) = ConstBinOp("in", l, r )
 
+type LineJoinerFunc = string seq -> string
+
+module LineJoiners =
+    let ParensAndCommas (lines: string seq) =
+        sprintf "(\n%s\n)" (String.concat ",\n" lines)
+        
+
 type Frag =
     | SelectS of string seq
     | Select of ColRef seq
@@ -54,22 +105,28 @@ type Frag =
     | FromS of string list
     | From of Table
     | FromAs of Table*Table // real table, alias name
-    | Nest of Frag seq
+    | Indent of Frag seq // indent subtree
+    | Nest of Frag seq // indent + paren wrapping
     | NestAs of string*(Frag seq) // (provide alias for nested seg, e.g. (select ID from Emp) MyIds
     | Raw of string
     | WhereS of string
     | Where of Cond seq
     | OrderBy of string list
     | GroupBy of string list
-    | Skip
+    | Skip  // skip does not emit a line
     | Join of Cond
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
-    | Many of Frag seq
+    | Many of Frag seq  // many does emit a line, but emits its children instead
+    | LineJoiner of (LineJoinerFunc*(Frag list))
     | Update of Table
     | Insert of Table*((string*string) seq)
     | Set of (string*string) list
     | Page of (int*int)
 
+    // DDL
+    | ColDef of DDLCol
+
+// functions that look like frags, but generate other frags instead
 let AliasAs (aliasTo: Table) frag = 
     match frag with
     | From t -> FromAs(t, aliasTo)
@@ -86,16 +143,20 @@ let Exists (frags: Frag seq) =
         Nest frags
     ]
 
+let CreateTable (Table t) (cols: DDLCol list) =
+    Many [
+            Raw <| sprintf "create table %s" t
+            Indent [
+                LineJoiner(LineJoiners.ParensAndCommas, (cols |> List.map ColDef))
+            ]
+    ]
+
+  
 // shorthands for SELECTing stuff
 let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]
 let (--->) (l: Table) (rs: ColRef seq) = Many [Select rs; From l]
 
 let colonList strings = String.concat ", " strings
-
-
-type SqlSyntax =
-| Any
-| Ora
 
 let rec serializeFrag (syntax: SqlSyntax) frag =
     match frag with 
@@ -138,29 +199,40 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         let collist = values |> Seq.map fst |> String.concat ","
         let vallist = values |> Seq.map snd |> String.concat ","
         sprintf "insert into %s (%s) values (%s)" t collist vallist
-        
-    | Nest _ | NestAs _ | Many _ -> failwith "Should never see subquery at serialization"
 
-    //| _ -> "notrans"
+    | ColDef(name, typ) -> sprintf "%s %s" name (DDLCol.typeToString syntax typ) 
+    | Nest _ | NestAs _ | Many _  | LineJoiner _ | Indent _ -> failwith "Should never see subquery at serialization"
+
 
 let serializeSql syntax frags =     
     let nSpaces n = (String.replicate (n*4) " ")
     let emitFrag nestingLevel frag  =
         (nSpaces nestingLevel) + serializeFrag syntax frag
 
+ 
     let rec emitFrags nestingLevel frags = 
 
         let nestInParens level txt = 
             sprintf "%s(\n%s\n%s)" (nSpaces level) txt (nSpaces level)
 
-        let doNest subfrags = (emitFrags (nestingLevel+1) subfrags |> String.concat "\n" |> nestInParens nestingLevel) 
+        let doIndent subfrags = (emitFrags (nestingLevel+1) subfrags |> String.concat "\n")
+
+        let doNest subfrags = (doIndent subfrags |> nestInParens nestingLevel) 
+        
         seq {
             for frag in frags do
                 match frag with
-                | Many frags -> yield! (frags |> Seq.map (emitFrag nestingLevel)) 
+                | Indent subfrags ->
+                    yield (doIndent subfrags)
+                    
+                | Many frags -> 
+                    let emittedChildren = emitFrags nestingLevel frags
+                    yield! emittedChildren
                 | Nest subfrags -> yield (doNest subfrags)
-                | NestAs(alias, subfrags) -> yield (sprintf "%s %s" (doNest subfrags) alias) 
-                //| Nest subfrags -> yield (emitFrags (nestingLevel+1) subfrags |> String.concat "\n" |> nestInParens nestingLevel)
+                | NestAs(alias, subfrags) -> yield (sprintf "%s %s" (doNest subfrags) alias)
+                | LineJoiner(func, frags) -> 
+                    let emittedChildren = emitFrags nestingLevel frags
+                    yield func(emittedChildren)
                 | Skip -> ()
                 | _ -> yield (emitFrag nestingLevel frag)
         }    

@@ -8,7 +8,7 @@ let rendersTo expected (frags: Frag list)  =
     let rendered = frags |> serializeSql SqlSyntax.Any
     let ok = rendered = expected
     if (not ok) then do 
-        printfn "Got\n%s\ninstead" (rendered.Replace("\n", "\\n"))
+        printfn "Got\n%s\ninstead of\n%s\n" (rendered.Replace("\n", "\\n")) (expected.Replace("\n","\\n"))
     Assert.IsTrue(ok)
 
 type Tests() =
@@ -49,7 +49,7 @@ type Tests() =
             GroupBy ["team"]
             OrderBy ["salary"]
         ]
-        query |> rendersTo "select employee.id, employee.name, employee.salary, employee.team\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\n\nwhere foo > bar\n\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
+        query |> rendersTo "select employee.id, employee.name, employee.salary, employee.team\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\nwhere foo > bar\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
 
         let nested = [
             SelectS ["*"]
@@ -109,10 +109,50 @@ type Tests() =
             Emp --> ["*"]
             Where [Emp?ID === "jorma"] 
         ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+            
+    [<Case>]
+    static member TestNesting() = 
+        [ Many [Many [ Raw "Inner" ] ] 
+        ] |> rendersTo "Inner"
+
+        [ Nest [ Raw "Inner" ] 
+        ] |> rendersTo "(\n    Inner\n)" 
+
+        let onetwolj = [ LineJoiner(LineJoiners.ParensAndCommas, [ Raw "One"; Raw "Two" ]) ]
+        onetwolj |> rendersTo "(\nOne,\nTwo\n)"
+       
+        [ Nest onetwolj ] |> rendersTo "(\n(\n    One,\n    Two\n)\n)"
+
+        [ 
+            Raw "a"
+            Indent [ 
+                Raw "a.1"
+                Indent [
+                    Raw "a.1.1"
+                    Raw "a.1.2"
+
+                ]
+                Raw "a.2"
+            ]
+            Raw "b"
+        ] |> rendersTo "a\n    a.1\n        a.1.1\n        a.1.2\n    a.2\nb"
+
+    [<Case>]
+    static member TestCreates() =
+        let Emp = Table "Employee"
+        [
+            CreateTable Emp
+                [
+                    "Name", VarChar 50
+                    "Salary", Decimal(10,2)
+                    "Address", Text |> NotNull
+                ]
+        ] |> rendersTo "create table Employee\n(\n    Name varchar(50),\n    Salary decimal(10,2),\n    Address text NOT NULL\n)"
 
 
 [<EntryPoint>]
 let main argv =
+    TRunner.CrashHard <- false
     TRunner.AddTests<Tests>()
     TRunner.RunTests()
     TRunner.ReportAll()
