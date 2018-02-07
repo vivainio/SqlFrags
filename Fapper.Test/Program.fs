@@ -12,6 +12,7 @@ let rendersTo expected (frags: Frag list)  =
     Assert.IsTrue(ok)
 
 type Tests() =
+
     [<Case>]
     static member TestOrm() =
         let Emp = Table "employee"
@@ -144,11 +145,25 @@ type Tests() =
             CreateTable Emp
                 [
                     "Name", VarChar 50
-                    "Salary", Decimal(10,2)
+                    "Salary", Number(10,2)
                     "Address", Text |> NotNull
                 ]
         ] |> rendersTo "create table Employee\n(\n    Name varchar(50),\n    Salary decimal(10,2),\n    Address text NOT NULL\n)"
-
+    
+    [<Case>]
+    static member TestSyntax() =
+        let r = 
+            [
+                RawSyntax [
+                    SqlSyntax.Any, "hello sql"
+                    SqlSyntax.Ora, "hello oracle"
+                ]
+            ]
+        let r1 = r |> serializeSql SqlSyntax.Any
+        let r2 = r |> serializeSql SqlSyntax.Ora
+        printf "%s %s" r1 r2
+        r1="hello sql" |> Assert.IsTrue
+        r2="hello oracle" |> Assert.IsTrue
 
 [<EntryPoint>]
 let main argv =

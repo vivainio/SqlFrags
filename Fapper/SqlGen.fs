@@ -55,7 +55,7 @@ type DDLType =
     | DateTime
     | DateTime2
     | VarChar of int
-    | Decimal of int*int
+    | Number of int*int
     | Text
     | NotNull of DDLType
 
@@ -73,8 +73,14 @@ module DDLCol =
         | Date -> "date"
         | DateTime -> "datetime"
         | DateTime2 -> "datetime2"
-        | VarChar c -> sprintf "varchar(%d)" c
-        | Decimal(a,b) -> sprintf "decimal(%d,%d)" a b
+        | VarChar c -> 
+            match syntax with 
+            | Ora -> sprintf "nvarchar2(%d)" c
+            | Any -> sprintf "varchar(%d)" c
+        | Number(a,b) -> 
+            match syntax with
+            | Ora -> sprintf "number(%d,%d)" a b
+            | Any -> sprintf "decimal(%d,%d)" a b
         | Text -> "text"
         | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
 
@@ -96,7 +102,9 @@ type LineJoinerFunc = string seq -> string
 module LineJoiners =
     let ParensAndCommas (lines: string seq) =
         sprintf "(\n%s\n)" (String.concat ",\n" lines)
-        
+    let SingleQuotes (lines: string seq) =
+        sprintf "'%s'" ((String.concat ",\n" lines).Replace("'", "''"))
+    
 
 type Frag =
     | SelectS of string seq
@@ -109,6 +117,7 @@ type Frag =
     | Nest of Frag seq // indent + paren wrapping
     | NestAs of string*(Frag seq) // (provide alias for nested seg, e.g. (select ID from Emp) MyIds
     | Raw of string
+    | RawSyntax of ((SqlSyntax*string) seq) // select string to emit by syntax
     | WhereS of string
     | Where of Cond seq
     | OrderBy of string list
@@ -151,7 +160,10 @@ let CreateTable (Table t) (cols: DDLCol list) =
             ]
     ]
 
-  
+// pl/sql, tsql and "nice" stuff like that
+
+
+
 // shorthands for SELECTing stuff
 let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]
 let (--->) (l: Table) (rs: ColRef seq) = Many [Select rs; From l]
@@ -199,7 +211,9 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         let collist = values |> Seq.map fst |> String.concat ","
         let vallist = values |> Seq.map snd |> String.concat ","
         sprintf "insert into %s (%s) values (%s)" t collist vallist
-
+    | RawSyntax(rules) -> 
+        rules |> Seq.find (fun r -> fst r = syntax) |> snd 
+        
     | ColDef(name, typ) -> sprintf "%s %s" name (DDLCol.typeToString syntax typ) 
     | Nest _ | NestAs _ | Many _  | LineJoiner _ | Indent _ -> failwith "Should never see subquery at serialization"
 
