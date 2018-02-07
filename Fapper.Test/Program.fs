@@ -5,10 +5,10 @@ open Fapper.SqlGen
 open TrivialTestRunner
 
 
-let rendersToSyntax syntax expected (frags: Frag list)  = 
+let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> serializeSql syntax
     let ok = rendered = expected
-    if (not ok) then do 
+    if (not ok) then do
         printfn "Got\n%s\ninstead of\n%s\n" (rendered.Replace("\n", "\\n")) (expected.Replace("\n","\\n"))
     Assert.IsTrue(ok)
 
@@ -70,7 +70,7 @@ type Tests() =
         let values = [ "a","1" ; "b","2"]
         let writes = [
                         Insert(Emp, values)
-                     ] 
+                     ]
         writes |> rendersTo "insert into employee (a,b) values (1,2)"
 
 
@@ -81,7 +81,7 @@ type Tests() =
                             SelectS ["*"]
                             From User
             ])
-        
+
         ]
         countq |> rendersTo "select count(1)\nfrom\n(\n    select *\n    from USER_DATA\n) Users"
 
@@ -90,47 +90,47 @@ type Tests() =
             From (Table "TASK")
             WhereS "recipient_id in "
             Nest [
-                Select [User.Col("ID")] 
+                Select [User.Col("ID")]
                 From User
             ]
         ]
 
         inq |> rendersTo "select *\nfrom TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
-    
+
         // select stuff with --> and --->
         [ Emp --> [ "Salary"; "Name" ] ]
         |> rendersTo "select Salary, Name\nfrom employee"
 
-        [ Emp ---> [ Emp?Salary; Emp?Name ] ] 
+        [ Emp ---> [ Emp?Salary; Emp?Name ] ]
         |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
         // ===^ (where condition without quoting)
         [
             Emp --> ["*"]
-            Where [Emp?ID ===^ "@ID"] 
+            Where [Emp?ID ===^ "@ID"]
         ] |> rendersTo "select *\nfrom employee\nwhere employee.ID=@ID"
 
         // === (where condition with quoting)
         [
             Emp --> ["*"]
-            Where [Emp?ID === "jorma"] 
+            Where [Emp?ID === "jorma"]
         ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
-            
+
     [<Case>]
-    static member TestNesting() = 
-        [ Many [Many [ Raw "Inner" ] ] 
+    static member TestNesting() =
+        [ Many [Many [ Raw "Inner" ] ]
         ] |> rendersTo "Inner"
 
-        [ Nest [ Raw "Inner" ] 
-        ] |> rendersTo "(\n    Inner\n)" 
+        [ Nest [ Raw "Inner" ]
+        ] |> rendersTo "(\n    Inner\n)"
 
         let onetwolj = [ LineJoiner(LineJoiners.ParensAndCommas, [ Raw "One"; Raw "Two" ]) ]
         onetwolj |> rendersTo "(\nOne,\nTwo\n)"
-       
+
         [ Nest onetwolj ] |> rendersTo "(\n(\n    One,\n    Two\n)\n)"
 
-        [ 
+        [
             Raw "a"
-            Indent [ 
+            Indent [
                 Raw "a.1"
                 Indent [
                     Raw "a.1.1"
@@ -153,10 +153,10 @@ type Tests() =
                     "Address", Text |> NotNull
                 ]
         ] |> rendersTo "create table Employee\n(\n    Name varchar(50),\n    Salary decimal(10,2),\n    Address text NOT NULL\n)"
-    
+
     [<Case>]
     static member TestSyntax() =
-        let r = 
+        let r =
             [
                 RawSyntax [
                     SqlSyntax.Any, "hello sql"
@@ -169,12 +169,12 @@ type Tests() =
         r2="hello oracle" |> Assert.IsTrue
 
     [<Case>]
-    static member PlSql() = 
-        let q = 
-            [ 
-                Pl.Exec [ 
-                    Raw "hello" 
-                    Raw "o'malley" 
+    static member PlSql() =
+        let q =
+            [
+                Pl.Exec [
+                    Raw "hello"
+                    Raw "o'malley"
                 ]
 
             ]
@@ -199,12 +199,21 @@ type Tests() =
         ] |> rendersTo "if a > 10\nthen\n    stuff in then;\n    other line;\nend if;"
 
 
-        let vdef = 
+        let vdef =
             [
                 VarDef("foo", VarChar 10, "'hi'")
-            ] 
+            ]
         vdef |> rendersToSyntax SqlSyntax.Any "@foo varchar(10) = 'hi';"
         vdef |> rendersToSyntax SqlSyntax.Ora "foo nvarchar2(10) := 'hi';"
+
+    [<Case>]
+    static member ModifyTables() =
+        let Emp = Table "Employee"
+        [
+            Alter.addCol Emp?Foo (VarChar 15)
+            Alter.modifyCol Emp?Foo (VarChar 11)
+            Alter.dropCol Emp?Foo
+        ] |> rendersTo "alter table Employee add Foo\nvarchar(15);\nalter table Employee modify column Foo\nvarchar(11);\nalter table Employee drop column Foo;"
 
 [<EntryPoint>]
 let main argv =
@@ -212,5 +221,5 @@ let main argv =
     TRunner.AddTests<Tests>()
     TRunner.RunTests()
     TRunner.ReportAll()
-    
+
     0 // return an integer exit code
