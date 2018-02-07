@@ -158,13 +158,6 @@ let Exists (frags: Frag seq) =
         Nest frags
     ]
 
-let CreateTable (Table t) (cols: DDLCol list) =
-    Many [
-            Raw <| sprintf "create table %s" t
-            Indent [
-                LineJoiner(LineJoiners.ParensAndCommas, (cols |> List.map ColDef))
-            ]
-    ]
 
 // pl/sql, tsql and "nice" stuff like that
 
@@ -297,14 +290,23 @@ module Alter =
             TypeName typ
         ]
 
-    let addCol (col: ColRef) (typ: DDLType) =
+    let AddCol (col: ColRef) (typ: DDLType) =
         Operation "add" col typ
 
-    let modifyCol (col: ColRef) (typ: DDLType) =
+    let ModifyCol (col: ColRef) (typ: DDLType) =
         Operation "modify column" col typ
-    let dropCol (col: ColRef) =
+    let DropCol (col: ColRef) =
         let (ColRef(t, c)) = col
         Pl.Stm [ Raw <| sprintf "alter table %s drop column %s" t.Name c ]
 
-    let createIndex (tab: Table)  (idxName: string) (cols: string seq) =
+    let CreateIndex (tab: Table)  (idxName: string) (cols: string seq) =
         Raw <| sprintf "create index %s on %s (%s);" idxName tab.Name (colonList cols)
+
+    let CreateTable (Table t) (cols: DDLCol list) =
+        Many [
+                Raw <| sprintf "create table %s" t
+                Indent [
+                    LineJoiner(LineJoiners.ParensAndCommas, (cols |> List.map ColDef))
+                ]
+        ]
+

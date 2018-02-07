@@ -146,7 +146,7 @@ type Tests() =
     static member TestCreates() =
         let Emp = Table "Employee"
         [
-            CreateTable Emp
+            Alter.CreateTable Emp
                 [
                     "Name", VarChar 50
                     "Salary", Number(10,2)
@@ -210,13 +210,13 @@ type Tests() =
     static member ModifyTables() =
         let Emp = Table "Employee"
         [
-            Alter.addCol Emp?Foo (VarChar 15)
-            Alter.modifyCol Emp?Foo (VarChar 11)
-            Alter.dropCol Emp?Foo
+            Alter.AddCol Emp?Foo (VarChar 15)
+            Alter.ModifyCol Emp?Foo (VarChar 11)
+            Alter.DropCol Emp?Foo
         ] |> rendersTo "alter table Employee add Foo\nvarchar(15);\nalter table Employee modify column Foo\nvarchar(11);\nalter table Employee drop column Foo;"
 
         [
-            Alter.createIndex Emp "foo_idx" ["foo"; "bar"]
+            Alter.CreateIndex Emp "foo_idx" ["foo"; "bar"]
 
         ] |> rendersTo "create index foo_idx on Employee (foo, bar);"
 
