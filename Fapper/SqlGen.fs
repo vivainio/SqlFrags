@@ -162,7 +162,17 @@ let CreateTable (Table t) (cols: DDLCol list) =
 
 // pl/sql, tsql and "nice" stuff like that
 
-
+module Pl =
+    let Exec frags =
+        Many [
+            RawSyntax [
+                SqlSyntax.Any, "execute sp_executesql"
+                SqlSyntax.Ora, "execute immediate"
+            ]
+            Indent [
+                LineJoiner(LineJoiners.SingleQuotes, frags)
+           ]
+        ]
 
 // shorthands for SELECTing stuff
 let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]

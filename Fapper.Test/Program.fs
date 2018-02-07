@@ -4,12 +4,16 @@ open System
 open Fapper.SqlGen
 open TrivialTestRunner
 
-let rendersTo expected (frags: Frag list)  = 
-    let rendered = frags |> serializeSql SqlSyntax.Any
+
+let rendersToSyntax syntax expected (frags: Frag list)  = 
+    let rendered = frags |> serializeSql syntax
     let ok = rendered = expected
     if (not ok) then do 
         printfn "Got\n%s\ninstead of\n%s\n" (rendered.Replace("\n", "\\n")) (expected.Replace("\n","\\n"))
     Assert.IsTrue(ok)
+
+let rendersTo expected frags = rendersToSyntax SqlSyntax.Any expected frags
+
 
 type Tests() =
 
@@ -164,6 +168,20 @@ type Tests() =
         printf "%s %s" r1 r2
         r1="hello sql" |> Assert.IsTrue
         r2="hello oracle" |> Assert.IsTrue
+
+    [<Case>]
+    static member PlSql() = 
+        let q = 
+            [ 
+                Pl.Exec [ 
+                    Raw "hello" 
+                    Raw "o'malley" 
+                ]
+
+            ]
+
+        q |> rendersToSyntax SqlSyntax.Any "execute sp_executesql\n'    hello,\n    o''malley'"
+        q |> rendersToSyntax SqlSyntax.Ora "execute immediate\n'    hello,\n    o''malley'"
 
 [<EntryPoint>]
 let main argv =
