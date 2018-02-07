@@ -187,6 +187,12 @@ module Pl =
             Indent frags
             Raw "end if;"
         ]
+    let Begin frags =
+        Many [
+            Raw "begin"
+            Indent frags
+            Raw "end;"
+        ]
 
 
 // shorthands for SELECTing stuff
@@ -299,3 +305,6 @@ module Alter =
     let dropCol (col: ColRef) =
         let (ColRef(t, c)) = col
         Pl.Stm [ Raw <| sprintf "alter table %s drop column %s" t.Name c ]
+
+    let createIndex (tab: Table)  (idxName: string) (cols: string seq) =
+        Raw <| sprintf "create index %s on %s (%s);" idxName tab.Name (colonList cols)

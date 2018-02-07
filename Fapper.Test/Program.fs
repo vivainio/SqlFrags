@@ -215,6 +215,39 @@ type Tests() =
             Alter.dropCol Emp?Foo
         ] |> rendersTo "alter table Employee add Foo\nvarchar(15);\nalter table Employee modify column Foo\nvarchar(11);\nalter table Employee drop column Foo;"
 
+        [
+            Alter.createIndex Emp "foo_idx" ["foo"; "bar"]
+
+        ] |> rendersTo "create index foo_idx on Employee (foo, bar);"
+
+    [<Case>]
+    static member ComposePlSql() =
+        // demo of composing tedious pl/sql stuff with functions
+        let Emp = Table "E"
+        let vertag = "12-13"
+        let createFrame category vertag frags =
+            Many [
+                Raw "declare"
+                VarDef("new_version", VarChar 32, sprintf "replace('%s', '-')" vertag);
+                Pl.Begin [
+                    Pl.IfThen "not db_version_exists(new_version)" [
+                        Many frags
+                        Raw <| sprintf "insert into VERSIONS values (new_version, '%s', CURRENT_TIMESTAMP)" category
+                    ]
+                ]
+            ]
+        let upgradeSlug =
+            createFrame "SOMEPRODUCT" "1212-2323" [
+                Insert(Emp, [
+                           "foo", "1"
+                ])
+        ]
+
+        [upgradeSlug] |> rendersToSyntax SqlSyntax.Ora "declare\nnew_version nvarchar2(32) := replace('1212-2323', '-');\nbegin\n    if not db_version_exists(new_version)\n    then\n        insert into E (foo) values (1)\n        insert into VERSIONS values (new_version, 'SOMEPRODUCT', CURRENT_TIMESTAMP)\n    end if;\nend;"
+        ()
+
+
+
 [<EntryPoint>]
 let main argv =
     TRunner.CrashHard <- false
