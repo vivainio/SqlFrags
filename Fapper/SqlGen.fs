@@ -104,6 +104,8 @@ module LineJoiners =
         sprintf "(\n%s\n)" (String.concat ",\n" lines)
     let SingleQuotes (lines: string seq) =
         sprintf "'%s'" ((String.concat ",\n" lines).Replace("'", "''"))
+    let Terminated (lines: string seq) = 
+        (String.concat "\n" lines) + ";"
     
 
 type Frag =
@@ -163,6 +165,7 @@ let CreateTable (Table t) (cols: DDLCol list) =
 // pl/sql, tsql and "nice" stuff like that
 
 module Pl =
+    let Stm frags = LineJoiner(LineJoiners.Terminated, frags)
     let Exec frags =
         Many [
             RawSyntax [
@@ -172,6 +175,13 @@ module Pl =
             Indent [
                 LineJoiner(LineJoiners.SingleQuotes, frags)
            ]
+        ]
+    let IfThen (cond: string) frags = 
+        Many [
+            Raw <| "if " + cond
+            Raw "then"
+            Indent frags
+            Raw "end if;"
         ]
 
 // shorthands for SELECTing stuff

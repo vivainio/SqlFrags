@@ -183,6 +183,20 @@ type Tests() =
         q |> rendersToSyntax SqlSyntax.Any "execute sp_executesql\n'    hello,\n    o''malley'"
         q |> rendersToSyntax SqlSyntax.Ora "execute immediate\n'    hello,\n    o''malley'"
 
+        // semicolon terminated statements
+        [
+            Pl.Stm [
+                Raw "ab"
+                Raw "cd"
+            ]
+        ] |> rendersTo "ab\ncd;"
+
+        [
+            Pl.IfThen "a > 10" [
+                [Raw "stuff in then"] |> Pl.Stm
+                [Raw "other line"] |> Pl.Stm
+            ]
+        ] |> rendersTo "if a > 10\nthen\n    stuff in then;\n    other line;\nend if;"
 [<EntryPoint>]
 let main argv =
     TRunner.CrashHard <- false
