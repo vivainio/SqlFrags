@@ -165,7 +165,6 @@ type Tests() =
             ]
         let r1 = r |> serializeSql SqlSyntax.Any
         let r2 = r |> serializeSql SqlSyntax.Ora
-        printf "%s %s" r1 r2
         r1="hello sql" |> Assert.IsTrue
         r2="hello oracle" |> Assert.IsTrue
 
@@ -191,12 +190,22 @@ type Tests() =
             ]
         ] |> rendersTo "ab\ncd;"
 
+        // if then
         [
             Pl.IfThen "a > 10" [
                 [Raw "stuff in then"] |> Pl.Stm
                 [Raw "other line"] |> Pl.Stm
             ]
         ] |> rendersTo "if a > 10\nthen\n    stuff in then;\n    other line;\nend if;"
+
+
+        let vdef = 
+            [
+                VarDef("foo", VarChar 10, "'hi'")
+            ] 
+        vdef |> rendersToSyntax SqlSyntax.Any "@foo varchar(10) = 'hi';"
+        vdef |> rendersToSyntax SqlSyntax.Ora "foo nvarchar2(10) := 'hi';"
+
 [<EntryPoint>]
 let main argv =
     TRunner.CrashHard <- false

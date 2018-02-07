@@ -58,6 +58,7 @@ type DDLType =
     | Number of int*int
     | Text
     | NotNull of DDLType
+    | PrimaryKey of DDLType
 
 type DDLCol = (string*DDLType)
 
@@ -83,6 +84,7 @@ module DDLCol =
             | Any -> sprintf "decimal(%d,%d)" a b
         | Text -> "text"
         | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
+        | PrimaryKey t -> sprintf "%s PRIMARY KEY" (typeToString syntax t)
 
 
 // inline operators
@@ -133,9 +135,11 @@ type Frag =
     | Insert of Table*((string*string) seq)
     | Set of (string*string) list
     | Page of (int*int)
-
     // DDL
     | ColDef of DDLCol
+
+    // 4gl specialities
+    | VarDef of (string*DDLType*string) // @name type = value;
 
 // functions that look like frags, but generate other frags instead
 let AliasAs (aliasTo: Table) frag = 
@@ -234,7 +238,12 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
     | RawSyntax(rules) -> 
         rules |> Seq.find (fun r -> fst r = syntax) |> snd 
         
-    | ColDef(name, typ) -> sprintf "%s %s" name (DDLCol.typeToString syntax typ) 
+    | ColDef(name, typ) -> sprintf "%s %s" name (DDLCol.typeToString syntax typ)
+    | VarDef(name, typ, value) -> 
+        match syntax with
+        | SqlSyntax.Ora -> sprintf "%s %s := %s;" name (DDLCol.typeToString syntax typ) value
+        | SqlSyntax.Any -> sprintf "@%s %s = %s;" name (DDLCol.typeToString syntax typ) value
+
     | Nest _ | NestAs _ | Many _  | LineJoiner _ | Indent _ -> failwith "Should never see subquery at serialization"
 
 
