@@ -224,7 +224,6 @@ type Tests() =
     static member ComposePlSql() =
         // demo of composing tedious pl/sql stuff with functions
         let Emp = Table "E"
-        let vertag = "12-13"
         let createFrame category vertag frags =
             Many [
                 Raw "declare"
