@@ -1,9 +1,6 @@
-﻿// Learn more about F# at http://fsharp.org
-
-open System
-open Fapper.SqlGen
+﻿open Fapper.SqlGen
 open TrivialTestRunner
-
+open Fapper.SqlGen
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> serializeSql syntax
@@ -14,6 +11,11 @@ let rendersToSyntax syntax expected (frags: Frag list)  =
 
 let rendersTo expected frags = rendersToSyntax SqlSyntax.Any expected frags
 
+
+type TestType() =
+    member val foo = "" with get,set
+    member val bar = 0 with get,set
+    member val mybool = false with get,set
 
 type Tests() =
 
@@ -245,7 +247,37 @@ type Tests() =
         [upgradeSlug] |> rendersToSyntax SqlSyntax.Ora "declare\nnew_version nvarchar2(32) := replace('1212-2323', '-');\nbegin\n    if not db_version_exists(new_version)\n    then\n        insert into E (foo) values (1)\n        insert into VERSIONS values (new_version, 'SOMEPRODUCT', CURRENT_TIMESTAMP)\n    end if;\nend;"
         ()
 
+    [<Case>]
+    static member TypedTest() =
+        let tt = TestType()
 
+        [
+            Set <| Typed.AsList
+                    <@
+                        tt.bar <- 12
+                        tt.foo <- "hello"
+                        tt.mybool <- false
+                    @>
+        ] |> rendersTo "set bar = 12, foo = 'hello', mybool = false"
+
+        let emp = Table "employee"
+
+        [
+            Insert(emp,
+                Typed.AsList
+                    <@
+                        tt.bar <- 12
+                        tt.foo <- "huuhaa"
+                    @>)
+
+        ] |> rendersTo "insert into employee (bar,foo) values (12,'huuhaa')"
+
+        let fortable =
+            Typed.AsListForTable emp
+                <@
+                    tt.bar <- 9
+                @>
+        [("employee.bar", "9")] = fortable |> Assert.IsTrue
 
 [<EntryPoint>]
 let main argv =
