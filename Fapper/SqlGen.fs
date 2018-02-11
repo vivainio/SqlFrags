@@ -86,7 +86,6 @@ module DDLCol =
         | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
         | PrimaryKey t -> sprintf "%s PRIMARY KEY" (typeToString syntax t)
 
-
 // inline operators
 
 // compare column against column
@@ -113,7 +112,7 @@ module LineJoiners =
 type Frag =
     | SelectS of string seq
     | Select of ColRef seq
-    | SelectAs of (ColRef*string) seq
+    | SelectAs of (ColRef*string) seq // every col getsn an alias
     | FromS of string list
     | From of Table
     | FromAs of Table*Table // real table, alias name
@@ -310,3 +309,47 @@ module Alter =
                 ]
         ]
 
+module Typed =
+    open FSharp.Quotations.Patterns
+    open FSharp.Quotations
+
+    // yield all sequence parts from expr tree
+    let rec private unseq (tree: Expr) =
+        seq {
+            match tree with
+            | Sequential( h,t) ->
+                yield h
+                yield! unseq t
+            | t ->
+                yield t
+        }
+
+    let private extractPropSets parts =
+        seq {
+            for p in parts do
+                match p with
+                | (PropertySet (Some(k), pi, _, valHolder)) ->
+                    match valHolder with
+                    | ValueWithName(value, _, _) ->
+                        yield (pi.Name, value)
+                        //printfn "value %s is %A" pi.Name value
+                    | Value(value, _) ->
+                        yield (pi.Name, value)
+                    | _ ->
+                        failwithf "Unsupported val pattern %A" valHolder
+                | _ -> ()
+        }
+    let private objAsString (o: obj) =
+        match o with
+        | :? int as i -> string i
+        | :? bool as b -> if b then "true" else "false"
+        | :? string as s -> sqlQuoted s
+        | _ -> string o
+
+    let private extractProps (tree: Expr) =
+        let parts = unseq tree
+        extractPropSets parts
+
+
+    let AsList (tree: Expr) =
+        extractProps tree |> Seq.map (fun (a,b) -> a, objAsString b ) |> List.ofSeq
