@@ -1,6 +1,5 @@
 ﻿open Fapper.SqlGen
 open TrivialTestRunner
-open Fapper.SqlGen
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> serializeSql syntax
