@@ -1,6 +1,5 @@
 ﻿open Fapper.SqlGen
 open TrivialTestRunner
-open Fapper.SqlGen
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> serializeSql syntax
@@ -279,6 +278,25 @@ type Tests() =
                 @>
         [("employee.bar", "9")] = fortable |> Assert.IsTrue
 
+    [<fCase>]
+    static member TypedDrill() =
+        let tt = TestType()
+
+        // create a list of default values etc, then create many lists using those default values
+        let l3 =
+            <@ 
+                tt.bar <- 1
+                tt.foo <- "defaultval"
+            @> |>
+                Typed.Drill [
+                    <@ tt.foo <- "a" @>
+                    <@ tt.foo <- "b" @>
+                    <@ () @>
+                ]
+        let expected = [[("bar", "1"); ("foo", "'a'")]; [("bar", "1"); ("foo", "'b'")];
+            [("bar", "1"); ("foo", "'defaultval'")]]
+        (List.ofSeq l3) = expected |> Assert.IsTrue
+        
 [<EntryPoint>]
 let main argv =
     TRunner.CrashHard <- false

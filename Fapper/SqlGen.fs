@@ -356,3 +356,15 @@ module Typed =
     let AsListForTable (Table t) (tree: Expr) =
         let l = AsList tree
         l |> List.map (fun (k,v) -> (t + "." + k, v))
+    
+    // combine typed.AsList's to set defaults etc in parent
+    let Drill (children: Expr seq) (parent: Expr) =
+        let lastKeyWins (l: (string*string) list) = 
+            l |> List.rev |> List.distinctBy fst |> List.rev
+
+        let parentL = AsList parent
+        // for "child wins" logic
+        children |> Seq.map AsList |> Seq.map (fun cl -> parentL @ cl) |> Seq.map lastKeyWins             
+
+        
+
