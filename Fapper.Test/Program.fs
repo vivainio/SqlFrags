@@ -26,7 +26,7 @@ type Tests() =
 
 
         let upd = [
-            Update Emp
+            Emp.Update
             Set [
                 "salary", "10"
                 "name", "'heimo'"

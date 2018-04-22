@@ -134,7 +134,6 @@ type Frag =
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
     | Many of Frag seq  // many does emit a line, but emits its children instead
     | LineJoiner of (LineJoinerFunc*(Frag list))
-    | Update of Table
     | Insert of Table*((string*string) seq)
     | Set of (string*string) list
     | Page of (int*int)
@@ -227,7 +226,6 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         let joinType = if joinKind = "" then "inner" else joinKind
         sprintf "%s join %s %s on %s=%s" joinType otherTable alias this.Str aliasedOther.Str
     | Skip -> ""
-    | Update (Table t) -> "update " + t
     | Set (updlist) ->
         let updates = updlist |> List.map (fun (k,v) -> sprintf "%s = %s" k v) |> String.concat ", "
         "set " + updates
@@ -376,3 +374,4 @@ module Typed =
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
     member x.Select cols =  Many [SelectS cols; From x]
+    member x.Update = Raw (sprintf "update %s" x.Name)
