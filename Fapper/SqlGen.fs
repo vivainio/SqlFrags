@@ -365,7 +365,7 @@ module Typed =
         Seq.map (AsList >> ((fun cl -> parentL @ cl) >> lastKeyWins)) children
 
 
-// non-essential table shorcuts
+// non-essential table extension methods
 
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
@@ -375,3 +375,11 @@ type Table with
         let collist = values |> Seq.map fst |> String.concat ","
         let vallist = values |> Seq.map snd |> String.concat ","
         sprintf "insert into %s (%s) values (%s)" t.Name collist vallist |> Raw
+
+type ColRef with
+    member l.Equals r = ConstEq(l,r)
+    member l.EqualsQ r = ConstEq(l,sqlQuoted r)
+    member l.EqualsCol r = ColsEq(l, r)
+
+    member l.In r = ConstBinOp("in", l, r)
+

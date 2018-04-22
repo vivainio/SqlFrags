@@ -86,8 +86,7 @@ type Tests() =
         countq |> rendersTo "select count(1)\nfrom\n(\n    select *\n    from USER_DATA\n) Users"
 
         let inq = [
-            SelectS ["*"]
-            From (Table "TASK")
+            (Table "TASK").Select ["*"]
             WhereS "recipient_id in "
             Nest [
                 Select [User.Col("ID")]
@@ -101,7 +100,7 @@ type Tests() =
         [ Emp --> [ "Salary"; "Name" ] ]
         |> rendersTo "select Salary, Name\nfrom employee"
 
-        // same with extension method
+        // same with extension method - please use extension methods instead of operators!
         [ Emp.Select [ "Salary"; "Name" ] ]
         |> rendersTo "select Salary, Name\nfrom employee"
 
@@ -121,6 +120,12 @@ type Tests() =
 
         [ Emp.Delete ]
         |> rendersTo "delete from employee"
+
+        [
+            Where [Emp?ID.Equals "@bar"]
+            Where [Emp?ID.EqualsQ "bar"]
+            Where [Emp?ID.EqualsCol Org?ID]
+        ] |> rendersTo "where employee.ID=@bar\nwhere employee.ID='bar'\nwhere employee.ID=organization.ID"
 
 
     [<Case>]
