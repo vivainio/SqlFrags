@@ -141,17 +141,8 @@ Nope, too tied to F# data structures. Similar "mechanical SQL emission" philosop
 
 ### What's up with the name?
 
-It's a "piece of F# code you can run before feeding the query to Dapper", hence F#apper or SqlFrags.
+Yes, this project was earlier known as "Fapper", which turned out to be rather problematic. Enjoy the new name.
 
-I'm aware the same word is used as a vulgar noun in some youth oriented internet subcultures,
-but that is so orthogonal to the topic of SQL Generation that I don't expect there to be confusion.
-
-It's also mildly amusing, for the time being.
-
-### Is it tied to Dapper somehow?
-
-No. In fact I use it directly with conn.CreateCommand() and untyped query.ExecuteReader(). Helpers for doing that may emerge as part
-the wider SqlFrags suite in separate modules. There are no dependencies - lists in, strings out.
 
 ### What databases does it support?
 
