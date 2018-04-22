@@ -134,9 +134,7 @@ type Frag =
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
     | Many of Frag seq  // many does emit a line, but emits its children instead
     | LineJoiner of (LineJoinerFunc*(Frag list))
-    //| Insert of Table*((string*string) seq)
-    | Set of (string*string) list
-    | Page of (int*int)
+
     // DDL
     | ColDef of DDLCol
     | TypeName of DDLType
@@ -159,6 +157,9 @@ let Exists (frags: Frag seq) =
         Raw "exists"
         Nest frags
     ]
+
+let Page offset limit =
+    Raw <| sprintf "offset %d rows fetch next %d rows only" offset limit
 
 // pl/sql, tsql and "nice" stuff like that
 
@@ -226,11 +227,7 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         let joinType = if joinKind = "" then "inner" else joinKind
         sprintf "%s join %s %s on %s=%s" joinType otherTable alias this.Str aliasedOther.Str
     | Skip -> ""
-    | Set (updlist) ->
-        let updates = updlist |> List.map (fun (k,v) -> sprintf "%s = %s" k v) |> String.concat ", "
-        "set " + updates
     | Raw txt -> txt
-    | Page(offset,limit) -> sprintf "offset %d rows fetch next %d rows only" offset limit
     | RawSyntax(rules) ->
         rules |> Seq.find (fun r -> fst r = syntax) |> snd
 
@@ -370,7 +367,12 @@ module Typed =
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
     member x.Select cols =  Many [SelectS cols; From x]
-    member x.Update = Raw (sprintf "update %s" x.Name)
+    member x.Update (updlist: (string*string) seq)=
+        let updates = updlist |> Seq.map (fun (k,v) -> sprintf "%s = %s" k v) |> String.concat ", "
+        Many [
+            Raw (sprintf "update %s" x.Name)
+            Raw (sprintf "set %s" updates)
+        ]
     member t.Insert values =
         let collist = values |> Seq.map fst |> String.concat ","
         let vallist = values |> Seq.map snd |> String.concat ","
@@ -382,4 +384,5 @@ type ColRef with
     member l.EqualsCol r = ColsEq(l, r)
 
     member l.In r = ConstBinOp("in", l, r)
+    member l.Op op r = ConstBinOp(op,l,r)
 

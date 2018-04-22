@@ -27,12 +27,12 @@ type Tests() =
 
         let upd = [
             Emp.Update
-            Set [
-                "salary", "10"
-                "name", "'heimo'"
-                "address", "@addressparam"
+                [
+                    "salary", "10"
+                    "name", "'heimo'"
+                    "address", "@addressparam"
 
-            ]
+                ]
             WhereS "foo > bar"
         ]
         upd |> rendersTo "update employee\nset salary = 10, name = 'heimo', address = @addressparam\nwhere foo > bar"
@@ -125,7 +125,10 @@ type Tests() =
             Where [Emp?ID.Equals "@bar"]
             Where [Emp?ID.EqualsQ "bar"]
             Where [Emp?ID.EqualsCol Org?ID]
-        ] |> rendersTo "where employee.ID=@bar\nwhere employee.ID='bar'\nwhere employee.ID=organization.ID"
+            Where [Emp?ID.In "[1,2]"]
+            Where [Emp?ID.Op "<" "12"]
+
+        ] |> rendersTo "where employee.ID=@bar\nwhere employee.ID='bar'\nwhere employee.ID=organization.ID\nwhere employee.ID in [1,2]\nwhere employee.ID < 12"
 
 
     [<Case>]
@@ -259,17 +262,19 @@ type Tests() =
     [<Case>]
     static member TypedTest() =
         let tt = TestType()
-
-        [
-            Set <| Typed.AsList
-                    <@
-                        tt.bar <- 12
-                        tt.foo <- "hello"
-                        tt.mybool <- false
-                    @>
-        ] |> rendersTo "set bar = 12, foo = 'hello', mybool = false"
-
         let emp = Table "employee"
+
+        [ emp.Update <|
+            Typed.AsList
+                <@
+                    tt.bar <- 12
+                    tt.foo <- "hello"
+                    tt.mybool <- false
+                @>
+        ] |>
+
+        rendersTo "update employee\nset bar = 12, foo = 'hello', mybool = false"
+
 
         [
             emp.Insert <|
