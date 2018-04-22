@@ -371,3 +371,8 @@ module Typed =
         Seq.map (AsList >> ((fun cl -> parentL @ cl) >> lastKeyWins)) children
 
 
+// non-essential table shorcuts
+
+type Table with
+    member x.Delete = Raw (sprintf "delete from %s" x.Name)
+    member x.Select cols =  Many [SelectS cols; From x]

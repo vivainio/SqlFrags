@@ -102,6 +102,10 @@ type Tests() =
         [ Emp --> [ "Salary"; "Name" ] ]
         |> rendersTo "select Salary, Name\nfrom employee"
 
+        // same with extension method
+        [ Emp.Select [ "Salary"; "Name" ] ]
+        |> rendersTo "select Salary, Name\nfrom employee"
+
         [ Emp ---> [ Emp?Salary; Emp?Name ] ]
         |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
         // ===^ (where condition without quoting)
@@ -115,6 +119,10 @@ type Tests() =
             Emp --> ["*"]
             Where [Emp?ID === "jorma"]
         ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+
+        [ Emp.Delete ]
+        |> rendersTo "delete from employee"
+
 
     [<Case>]
     static member TestNesting() =
@@ -278,7 +286,7 @@ type Tests() =
                 @>
         [("employee.bar", "9")] = fortable |> Assert.IsTrue
 
-    [<fCase>]
+    [<Case>]
     static member TypedDrill() =
         let tt = TestType()
 
