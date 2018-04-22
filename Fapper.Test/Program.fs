@@ -69,9 +69,8 @@ type Tests() =
         let out2 = serializeSql SqlSyntax.Any nested
 
         let values = [ "a","1" ; "b","2"]
-        let writes = [
-                        Insert(Emp, values)
-                     ]
+        let writes = [ Emp.Insert values ]
+
         writes |> rendersTo "insert into employee (a,b) values (1,2)"
 
 
@@ -246,9 +245,7 @@ type Tests() =
             ]
         let upgradeSlug =
             createFrame "SOMEPRODUCT" "1212-2323" [
-                Insert(Emp, [
-                           "foo", "1"
-                ])
+                Emp.Insert ["foo", "1"]
         ]
 
         [upgradeSlug] |> rendersToSyntax SqlSyntax.Ora "declare\nnew_version nvarchar2(32) := replace('1212-2323', '-');\nbegin\n    if not db_version_exists(new_version)\n    then\n        insert into E (foo) values (1)\n        insert into VERSIONS values (new_version, 'SOMEPRODUCT', CURRENT_TIMESTAMP)\n    end if;\nend;"
@@ -270,12 +267,12 @@ type Tests() =
         let emp = Table "employee"
 
         [
-            Insert(emp,
+            emp.Insert <|
                 Typed.AsList
                     <@
                         tt.bar <- 12
                         tt.foo <- "huuhaa"
-                    @>)
+                    @>
 
         ] |> rendersTo "insert into employee (bar,foo) values (12,'huuhaa')"
 

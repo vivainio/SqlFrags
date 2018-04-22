@@ -134,7 +134,7 @@ type Frag =
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
     | Many of Frag seq  // many does emit a line, but emits its children instead
     | LineJoiner of (LineJoinerFunc*(Frag list))
-    | Insert of Table*((string*string) seq)
+    //| Insert of Table*((string*string) seq)
     | Set of (string*string) list
     | Page of (int*int)
     // DDL
@@ -231,10 +231,6 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         "set " + updates
     | Raw txt -> txt
     | Page(offset,limit) -> sprintf "offset %d rows fetch next %d rows only" offset limit
-    | Insert(Table t, values) ->
-        let collist = values |> Seq.map fst |> String.concat ","
-        let vallist = values |> Seq.map snd |> String.concat ","
-        sprintf "insert into %s (%s) values (%s)" t collist vallist
     | RawSyntax(rules) ->
         rules |> Seq.find (fun r -> fst r = syntax) |> snd
 
@@ -375,3 +371,7 @@ type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
     member x.Select cols =  Many [SelectS cols; From x]
     member x.Update = Raw (sprintf "update %s" x.Name)
+    member t.Insert values =
+        let collist = values |> Seq.map fst |> String.concat ","
+        let vallist = values |> Seq.map snd |> String.concat ","
+        sprintf "insert into %s (%s) values (%s)" t.Name collist vallist |> Raw
