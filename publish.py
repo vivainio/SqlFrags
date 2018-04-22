@@ -3,7 +3,7 @@ from __future__ import print_function
 import os,shutil
 
 prjdir = "Fapper"
-version = "2.0.0.0"
+version = "3.0.0.0"
 def c(s):
     print(">",s)
     err = os.system(s)
@@ -19,5 +19,12 @@ nuke(prjdir + "/obj")
 os.chdir("%s.Test" % prjdir )
 c("dotnet run")
 
+def pack():
+    c("dotnet pack /p:Version=%s" % version)
+
+
 os.chdir("../" + prjdir)
-c("dotnet pack /p:Version=%s" % version)
+pack()
+
+os.chdir("../Fapper.Db")
+pack()
