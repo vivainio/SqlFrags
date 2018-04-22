@@ -42,6 +42,10 @@ with
                    | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
                    | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
 
+module Conds =
+    let Like l r = ConstBinOp("like", l,sqlQuoted r)
+    let In (l: ColRef) (r: string) = ConstBinOp("in", l, r )
+
 
 
 type DDLType =
@@ -356,15 +360,14 @@ module Typed =
     let AsListForTable (Table t) (tree: Expr) =
         let l = AsList tree
         l |> List.map (fun (k,v) -> (t + "." + k, v))
-    
+
     // combine typed.AsList's to set defaults etc in parent
     let Drill (children: Expr seq) (parent: Expr) =
-        let lastKeyWins (l: (string*string) list) = 
+        let lastKeyWins (l: (string*string) list) =
             l |> List.rev |> List.distinctBy fst |> List.rev
 
         let parentL = AsList parent
         // for "child wins" logic
-        children |> Seq.map AsList |> Seq.map (fun cl -> parentL @ cl) |> Seq.map lastKeyWins             
+        Seq.map (AsList >> ((fun cl -> parentL @ cl) >> lastKeyWins)) children
 
-        
 

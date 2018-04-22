@@ -284,7 +284,7 @@ type Tests() =
 
         // create a list of default values etc, then create many lists using those default values
         let l3 =
-            <@ 
+            <@
                 tt.bar <- 1
                 tt.foo <- "defaultval"
             @> |>
@@ -293,10 +293,11 @@ type Tests() =
                     <@ tt.foo <- "b" @>
                     <@ () @>
                 ]
-        let expected = [[("bar", "1"); ("foo", "'a'")]; [("bar", "1"); ("foo", "'b'")];
+        let expected = [
+            [("bar", "1"); ("foo", "'a'")]; [("bar", "1"); ("foo", "'b'")];
             [("bar", "1"); ("foo", "'defaultval'")]]
         (List.ofSeq l3) = expected |> Assert.IsTrue
-        
+
 [<EntryPoint>]
 let main argv =
     TRunner.CrashHard <- false
