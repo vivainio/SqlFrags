@@ -4,7 +4,7 @@ open System.Data.SqlClient
 open System
 open System.Data
 
-
+// helper for connecting to database (connection strings and stuff)
 module DbConnector =
     open System.Diagnostics
 
@@ -64,9 +64,6 @@ module DbConnector =
         Connector(MsSql, ConnectionString [ DataSource "localhost"; Catalog "xx"; IntegratedSecurity true])
 
 
-open DbConnector
-
-
 // data as read from raw db query
 type RawTableRec = {
     Name: string
@@ -103,47 +100,12 @@ module RawTableRec =
         } |> Array.ofSeq
 
 
-type Conn() =
-    let readToArr (r: SqlDataReader) =
+
+module QueryRunner =
+    let private readToArr (r: SqlDataReader) =
         [| 0..(r.FieldCount-1) |] |> Array.map r.GetValue
 
-    let connectToDefault() =
-        let connector = DefaultConnector
-        connector.Connect()
-
-    let conn = connectToDefault()
-
-    member x.Connection = conn
-
-    // not really useful with mssql
-    member x.WithObjs sql (values: obj seq) =
-        let q = conn.CreateCommand()
-        q.CommandText <- sql
-        for v in values do
-
-            let p = q.CreateParameter()
-            p.Value <- v
-            q.Parameters.Add(p) |> ignore
-        x.QueryImpl q
-
-    member x.WithParams sql (values: (string*obj) seq) =
-        let q = conn.CreateCommand()
-        q.CommandText <- sql
-        for (k,v) in values do
-            let p = q.CreateParameter()
-            p.ParameterName <- k
-            p.Value <- v
-            q.Parameters.Add(p) |> ignore
-        x.QueryImpl q
-
-    member x.Query sql =
-        let q = conn.CreateCommand()
-        q.CommandText <- sql;
-        x.QueryImpl q
-
-
-    // tableName is optional informational argument, set to "" if don't care
-    member __.QueryImpl q =
+    let private queryImpl (q: IDbCommand) =
         use reader = q.ExecuteReader()
         let headers = [| 0..(reader.FieldCount-1) |] |> Array.map reader.GetName
         {
@@ -157,3 +119,28 @@ type Conn() =
                         yield valArray
                 } |> Seq.toArray
         }
+
+    let WithObjs (conn: IDbConnection) sql (values: obj seq) =
+        use q = conn.CreateCommand()
+        q.CommandText <- sql
+        for v in values do
+
+            let p = q.CreateParameter()
+            p.Value <- v
+            q.Parameters.Add(p) |> ignore
+        queryImpl q
+
+    let WithParams (conn: IDbConnection) sql (values: (string*obj) seq) =
+        use q = conn.CreateCommand()
+        q.CommandText <- sql
+        for (k,v) in values do
+            let p = q.CreateParameter()
+            p.ParameterName <- k
+            p.Value <- v
+            q.Parameters.Add(p) |> ignore
+        queryImpl q
+
+    let Query (conn: IDbConnection) sql =
+        use q = conn.CreateCommand()
+        q.CommandText <- sql;
+        queryImpl q

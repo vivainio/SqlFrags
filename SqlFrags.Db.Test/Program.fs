@@ -4,15 +4,19 @@ open TrivialTestRunner
 open SqlFrags.Db
 
 open DbConnector
+open SqlFrags.Db.QueryRunner
+
+let connector = Connector(MsSql, ConnectionString [DataSource "localhost"; Catalog "IA"; IntegratedSecurity true ])
+
 type Test() =
     [<Case>]
     static member Connect() =
         // replace xx with your own catalog name
         DefaultConnector <- Connector(MsSql, ConnectionString [DataSource "localhost"; Catalog "IA"; IntegratedSecurity true ])
-        let c = Conn()
-        c.Connection.Open()
-        let res = c.Query "select 1"
-        Assert.AreEqual(2, res.Rows.[0].[0] :?> int)
+        let db = connector.Connect()
+        db.Open()
+        let res = Query db "select 1"
+        Assert.AreEqual(1, res.Rows.[0].[0] :?> int)
 
 
 [<EntryPoint>]
