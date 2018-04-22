@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os,shutil
 
-prjdir = "Fapper"
+prjdir = "SqlFrags"
 version = "3.0.0.0"
 def c(s):
     print(">",s)
@@ -26,5 +26,5 @@ def pack():
 os.chdir("../" + prjdir)
 pack()
 
-os.chdir("../Fapper.Db")
+os.chdir("../SqlFrags.Db")
 pack()

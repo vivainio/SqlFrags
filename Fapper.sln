@@ -2,13 +2,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fapper", "Fapper\Fapper.fsproj", "{7BBDB2BC-DD22-4A82-A827-AEE803807BA8}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SqlFrags", "SqlFrags\SqlFrags.fsproj", "{7BBDB2BC-DD22-4A82-A827-AEE803807BA8}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Fapper.Test", "Fapper.Test\Fapper.Test.fsproj", "{B47107DA-CC44-41E2-BAF2-E922683A4939}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SqlFrags.Test", "SqlFrags.Test\SqlFrags.Test.fsproj", "{B47107DA-CC44-41E2-BAF2-E922683A4939}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fapper.Db", "Fapper.Db\Fapper.Db.fsproj", "{2956237E-4951-497F-8543-720C87B1845F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlFrags.Db", "SqlFrags.Db\SqlFrags.Db.fsproj", "{2956237E-4951-497F-8543-720C87B1845F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fapper.Db.Test", "Fapper.Db.Test\Fapper.Db.Test.fsproj", "{A62F1853-B745-4E50-9AAF-CF977494C560}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SqlFrags.Db.Test", "SqlFrags.Db.Test\SqlFrags.Db.Test.fsproj", "{A62F1853-B745-4E50-9AAF-CF977494C560}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

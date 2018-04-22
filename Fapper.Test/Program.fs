@@ -1,4 +1,4 @@
-﻿open Fapper.SqlGen
+﻿open SqlFrags.SqlGen
 open TrivialTestRunner
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
@@ -38,7 +38,7 @@ type Tests() =
         upd |> rendersTo "update employee\nset salary = 10, name = 'heimo', address = @addressparam\nwhere foo > bar"
 
 
-        // this is not legal sql. Fapper does absolutely no structure validity checking whatsoever
+        // this is not legal sql. SqlFrags does absolutely no structure validity checking whatsoever
         let query = [
             Select <| Emp.Cols ["id";"name"; "salary"; "team"]
             SelectAs [Emp?Foo, "testalias"]

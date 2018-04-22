@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Fapper\Fapper.fsproj" />
+    <ProjectReference Include="..\SqlFrags\SqlFrags.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

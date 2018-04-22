@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Fapper.Db\Fapper.Db.fsproj" />
+    <ProjectReference Include="..\SqlFrags.Db\SqlFrags.Db.fsproj" />
   </ItemGroup>
 
 </Project>

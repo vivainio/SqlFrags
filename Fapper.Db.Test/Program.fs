@@ -1,7 +1,7 @@
 ﻿// Learn more about F# at http://fsharp.org
 
 open TrivialTestRunner
-open Fapper.Db
+open SqlFrags.Db
 
 open DbConnector
 type Test() =

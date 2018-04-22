@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Title>Fapper</Title>
+    <Title>SqlFrags</Title>
     <Description>SQL Generator for F#</Description>
     <Authors>vivainio</Authors>
     <Company />
     <Copyright>Ville Vainio</Copyright>
-    <PackageProjectUrl>https://github.com/vivainio/Fapper</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/vivainio/Fapper/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/vivainio/SqlFrags</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/vivainio/SqlFrags/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
   <ItemGroup>

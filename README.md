@@ -1,16 +1,16 @@
-# Fapper - a SQL generator for F#
+# SqlFrags - a SQL generator for F#
 
 ## The problem:
 
 Tools like Dapper make it easy to materialize objects, but you need to write SQL strings by hand.
 
 SQL generation is painful and requires careful typing. It can be made easier by adding a static component.
-Fapper is that static component.
+SqlFrags is that static component.
 
 F# gives you a nice list syntax, so you provide a list of "Frags" (a distriminated union of SQL fragments you want to have in your query), like so:
 
 ```fsharp
-open Fapper.SqlGen
+open SqlFrags.SqlGen
 
 // declaring some table names for later reference...
 
@@ -71,7 +71,7 @@ from
 
 Simple updates are easy enough to do with existing micro-orms like Dapper.Contrib or PetaPoco.
 However, you often need to produce complex queries, so you can crank up the difficulty with nesting, aliases etc.
-Emitting completely illegal SQL is fine, Fapper is not one to second guess you - it diligently renders the garbage
+Emitting completely illegal SQL is fine, SqlFrags is not one to second guess you - it diligently renders the garbage
 you feed it:
 
 ```fsharp
@@ -103,7 +103,7 @@ If you wanted "outer", just pass "outer" as the last argument to JoinOn (empty s
 And what are those "Many" and Skip parts? They are provided for convenience, when splicing sublists in programmatically
 generated queries.
 
-Operator overloading is not for the faint of hearth, but neither is Fapper. There are some overloaded operators to simplify select
+Operator overloading is not for the faint of hearth, but neither is SqlFrags. There are some overloaded operators to simplify select
 and where clauses:
 
 ```fsharp
@@ -131,7 +131,7 @@ and where clauses:
 
 ## FAQ
 
-### Why Fapper when there are millions of other SQL generators on the web?
+### Why SqlFrags when there are millions of other SQL generators on the web?
 
 There aren't for .NET. Search for yourself.
 
@@ -141,7 +141,7 @@ Nope, too tied to F# data structures. Similar "mechanical SQL emission" philosop
 
 ### What's up with the name?
 
-It's a "piece of F# code you can run before feeding the query to Dapper", hence F#apper or Fapper.
+It's a "piece of F# code you can run before feeding the query to Dapper", hence F#apper or SqlFrags.
 
 I'm aware the same word is used as a vulgar noun in some youth oriented internet subcultures,
 but that is so orthogonal to the topic of SQL Generation that I don't expect there to be confusion.
@@ -151,7 +151,7 @@ It's also mildly amusing, for the time being.
 ### Is it tied to Dapper somehow?
 
 No. In fact I use it directly with conn.CreateCommand() and untyped query.ExecuteReader(). Helpers for doing that may emerge as part
-the wider Fapper suite in separate modules. There are no dependencies - lists in, strings out.
+the wider SqlFrags suite in separate modules. There are no dependencies - lists in, strings out.
 
 ### What databases does it support?
 
@@ -161,7 +161,7 @@ but currently only SqlSyntax.Any is used.
 
 ### Why not use XXX or YYY instead?
 
-Fapper allows you to compose queries from fragments. You can create the fragments (or lists of fragments) in functions, assign
+SqlFrags allows you to compose queries from fragments. You can create the fragments (or lists of fragments) in functions, assign
 repeated fragments to variables, etc. This is like creating HTML with Suave.Html, Giraffe ViewModel or Elm.
 
 You don't need to have access to database schema (yet alone live database, like with SqlProvider) to create queries. This helps if
@@ -186,12 +186,12 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
 ...
 ```
 
-So, if you want to add something you need, you just do it. Copy the SqlGen.fs to your project, or make a PR and join the Fapper family.
+So, if you want to add something you need, you just do it. Copy the SqlGen.fs to your project, or make a PR and join the SqlFrags family.
 
 
 ## Installation
 
-https://www.nuget.org/packages/Fapper
+https://www.nuget.org/packages/SqlFrags
 
 ## License
 

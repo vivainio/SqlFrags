@@ -1,4 +1,4 @@
-namespace Fapper.Db
+namespace SqlFrags.Db
 
 open System.Data.SqlClient
 open System

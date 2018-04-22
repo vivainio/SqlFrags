@@ -1,4 +1,4 @@
-﻿module Fapper.SqlGen
+﻿module SqlFrags.SqlGen
 
 type SqlSyntax =
 | Any
