@@ -130,7 +130,6 @@ type Frag =
     | OrderBy of string list
     | GroupBy of string list
     | Skip  // skip does not emit a line
-    | Join of Cond
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
     | Many of Frag seq  // many does emit a line, but emits its children instead
     | LineJoiner of (LineJoinerFunc*(Frag list))
@@ -142,15 +141,6 @@ type Frag =
     | VarDef of (string*DDLType*string) // @name type = value;
 
 // functions that look like frags, but generate other frags instead
-let AliasAs (aliasTo: Table) frag =
-    match frag with
-    | From t -> FromAs(t, aliasTo)
-    | Join cond ->
-        match cond with
-        | ColsEq(other,this) ->
-            JoinOn(other, this, aliasTo, "")
-        | _ -> failwithf "No alias for %A" cond
-    | _ -> failwithf "Aliasing not implemented %A" frag
 
 let Exists (frags: Frag seq) =
     Nest [
@@ -215,11 +205,6 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         "where " + joined
     | OrderBy els -> "order by " + colonList els
     | GroupBy els -> "group by " + colonList els
-    | Join cond ->
-        match cond with
-        | ColsEq(other,this) -> sprintf "join %s on %s" other.Table cond.Str
-        | _ -> failwith "Join cond not supported"
-
     | JoinOn(other: ColRef, this: ColRef, (Table alias), joinKind: string) ->
         let (ColRef(Table otherTable, _)) = other
         let aliasedOther = if alias = "" then other else match other with
