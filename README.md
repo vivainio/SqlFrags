@@ -18,18 +18,18 @@ let Emp = Table "employee"
 let Org = Table "organization"
 
 let upd = [
-    Update Emp
-    Set [
-        "salary", "10"
-        "name", "'heimo'"
-        "address", "@addressparam"
+    Emp.Update
+        [
+            "salary", "10"
+            "name", "'heimo'"
+            "address", "@addressparam"
 
-    ]
+        ]
     WhereS "foo > bar"
 ]
 
-let rendered = upd |> serializeSql SqlSyntax.Any
 
+let rendered = upd |> Frags.Emit SqlSyntax.Any
 ```
 
 This renders to string:
@@ -54,7 +54,6 @@ let nested = [
                     From User
     ])
 ]
-
 ```
 
 This gives you indented, parenthesized SQL (aliased as you specified):
@@ -103,13 +102,15 @@ If you wanted "outer", just pass "outer" as the last argument to JoinOn (empty s
 And what are those "Many" and Skip parts? They are provided for convenience, when splicing sublists in programmatically
 generated queries.
 
-Operator overloading is not for the faint of hearth, but neither is SqlFrags. There are some overloaded operators to simplify select
-and where clauses:
+There are some overloaded operators and extension methods to simplify selectand where clauses:
 
 ```fsharp
-
-// select stuff with --> and --->
+        // select stuff with --> and --->
 [ Emp --> [ "Salary"; "Name" ] ]
+|> rendersTo "select Salary, Name\nfrom employee"
+
+// same with extension method - please use extension methods instead of operators!
+[ Emp.Select [ "Salary"; "Name" ] ]
 |> rendersTo "select Salary, Name\nfrom employee"
 
 [ Emp ---> [ Emp?Salary; Emp?Name ] ]
@@ -125,6 +126,18 @@ and where clauses:
     Emp --> ["*"]
     Where [Emp?ID === "jorma"]
 ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+
+[ Emp.Delete ]
+|> rendersTo "delete from employee"
+
+[
+    Where [Emp?ID.Equals "@bar"]
+    Where [Emp?ID.EqualsQ "bar"]
+    Where [Emp?ID.EqualsCol Org?ID]
+    Where [Emp?ID.In "[1,2]"]
+    Where [Emp?ID.Op "<" "12"]
+
+] |> rendersTo "where employee.ID=@bar\nwhere employee.ID='bar'\nwhere employee.ID=organization.ID\nwhere employee.ID in [1,2]\nwhere employee.ID < 12"
 
 ```
 
