@@ -103,11 +103,6 @@ module RawTableRec =
         } |> Array.ofSeq
 
 
-
-
-
-
-
 type Conn() =
     let readToArr (r: SqlDataReader) =
         [| 0..(r.FieldCount-1) |] |> Array.map r.GetValue
@@ -148,10 +143,9 @@ type Conn() =
 
 
     // tableName is optional informational argument, set to "" if don't care
-    member x.QueryImpl q =
+    member __.QueryImpl q =
         use reader = q.ExecuteReader()
         let headers = [| 0..(reader.FieldCount-1) |] |> Array.map reader.GetName
-        let valArray = Array.zeroCreate reader.FieldCount
         {
             Name = ""
             Header = headers;
