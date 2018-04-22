@@ -348,11 +348,12 @@ module Typed =
         Seq.map (AsList >> ((fun cl -> parentL @ cl) >> lastKeyWins)) children
 
 
-// non-essential table extension methods
+// extension methods
 
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
     member x.Select cols =  Many [SelectS cols; From x]
+    member x.SelectAll = Raw (sprintf "select * from %s" x.Name)
     member x.Update (updlist: (string*string) seq)=
         let updates = updlist |> Seq.map (fun (k,v) -> sprintf "%s = %s" k v) |> String.concat ", "
         Many [

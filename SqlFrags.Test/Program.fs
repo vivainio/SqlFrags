@@ -101,6 +101,9 @@ type Tests() =
         [ Emp.Select [ "Salary"; "Name" ] ]
         |> rendersTo "select Salary, Name\nfrom employee"
 
+        [ Emp.SelectAll ]
+        |> rendersTo "select * from employee"
+
         [ Emp ---> [ Emp?Salary; Emp?Name ] ]
         |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
         // ===^ (where condition without quoting)
