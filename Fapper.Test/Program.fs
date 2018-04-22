@@ -2,7 +2,7 @@
 open TrivialTestRunner
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
-    let rendered = frags |> serializeSql syntax
+    let rendered = frags |> Frags.Emit syntax
     let ok = rendered = expected
     if (not ok) then do
         printfn "Got\n%s\ninstead of\n%s\n" (rendered.Replace("\n", "\\n")) (expected.Replace("\n","\\n"))
@@ -37,7 +37,6 @@ type Tests() =
         ]
         upd |> rendersTo "update employee\nset salary = 10, name = 'heimo', address = @addressparam\nwhere foo > bar"
 
-        //upd |> (serializeSql SqlSyntax.Any) |> printVerbatim
 
         // this is not legal sql. Fapper does absolutely no structure validity checking whatsoever
         let query = [
@@ -66,13 +65,11 @@ type Tests() =
             ])
         ]
         nested |> rendersTo "select *\nfrom\n(\n    select *\n    from USER_DATA\n) root"
-        let out2 = serializeSql SqlSyntax.Any nested
 
         let values = [ "a","1" ; "b","2"]
         let writes = [ Emp.Insert values ]
 
         writes |> rendersTo "insert into employee (a,b) values (1,2)"
-
 
         let countq = [
             SelectS ["count(1)"]
@@ -179,8 +176,8 @@ type Tests() =
                     SqlSyntax.Ora, "hello oracle"
                 ]
             ]
-        let r1 = r |> serializeSql SqlSyntax.Any
-        let r2 = r |> serializeSql SqlSyntax.Ora
+        let r1 = r |> Frags.Emit SqlSyntax.Any
+        let r2 = r |> Frags.Emit SqlSyntax.Ora
         r1="hello sql" |> Assert.IsTrue
         r2="hello oracle" |> Assert.IsTrue
 

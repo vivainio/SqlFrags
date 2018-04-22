@@ -261,6 +261,7 @@ let serializeSql syntax frags =
         }
     frags |> emitFrags 0 |>  String.concat "\n"
 
+
 module Alter =
     let Operation (operation: string) (col: ColRef) (typ: DDLType) =
         let (ColRef(t, c)) = col
@@ -370,4 +371,9 @@ type ColRef with
 
     member l.In r = ConstBinOp("in", l, r)
     member l.Op op r = ConstBinOp(op,l,r)
+
+// glorious public api
+module Frags =
+    let Emit syntax frags =
+        serializeSql syntax frags
 
