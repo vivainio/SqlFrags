@@ -6,6 +6,7 @@ let rendersToSyntax syntax expected (frags: Frag list)  =
     let ok = rendered = expected
     if (not ok) then do
         printfn "Got\n%s\ninstead of\n%s\n" (rendered.Replace("\n", "\\n")) (expected.Replace("\n","\\n"))
+        printfn "Indented:\n---\n%s\n---" rendered
     Assert.IsTrue(ok)
 
 let rendersTo expected frags = rendersToSyntax SqlSyntax.Any expected frags
@@ -184,6 +185,7 @@ type Tests() =
         r1="hello sql" |> Assert.IsTrue
         r2="hello oracle" |> Assert.IsTrue
 
+
     [<Case>]
     static member TestConds() =
         let e = Table "emp"
@@ -200,7 +202,14 @@ type Tests() =
                     e?f.Equals "17"
                 ]
             ]
-        [ Where [conds]] |> rendersTo "where (emp.a=12 and emp.b=13 and (emp.c=14 or emp.d=15) and (emp.e=16 and emp.f=17))"
+        [ conds.AsFrag ]
+        |> rendersTo "(\n    emp.a=12\n    and\n    emp.b=13\n    and\n    (\n        emp.c=14\n        or\n        emp.d=15\n    )\n    and\n    (\n        emp.e=16\n        and\n        emp.f=17\n    )\n)"
+
+        [ Where [conds]]
+        |> rendersTo "where (emp.a=12 and emp.b=13 and (emp.c=14 or emp.d=15) and (emp.e=16 and emp.f=17))"
+
+        [ Conds.Where <| Conds.And [e?a.Equals "10"; e?b.Equals "11" ] ]
+        |> rendersTo "where\n    (\n        emp.a=10\n        and\n        emp.b=11\n    )"
 
     [<Case>]
     static member PlSql() =

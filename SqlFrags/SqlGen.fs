@@ -31,24 +31,6 @@ let inline (?) (this: Table) (colName:string) =
 
 let sqlQuoted (s: string) = s.Replace("'", "''") |> sprintf "'%s'"
 
-type Cond =
-    | ConstEq of ColRef*string
-    | ColsEq of ColRef*ColRef
-    | ConstBinOp of string*ColRef*string
-    | CondCompose of string*(Cond seq)
-
-with
-    member x.Str = match x with
-                   | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value
-                   | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
-                   | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
-                   | CondCompose(op, parts) -> parts |> Seq.map (fun p -> p.Str) |> String.concat (sprintf " %s " op) |> sprintf "(%s)"
-
-module Conds =
-    let Like l r = ConstBinOp("like", l,sqlQuoted r)
-    let In (l: ColRef) (r: string) = ConstBinOp("in", l, r )
-    let And conds = CondCompose("and", conds)
-    let Or conds = CondCompose("or",conds)
 
 
 type DDLType =
@@ -95,15 +77,6 @@ module DDLCol =
 
 // inline operators
 
-// compare column against column
-let (==) (l: ColRef) (r: ColRef) = ColsEq(l,r)
-// compare column against const, user needs to add quotes if needed
-let (===^) (l: ColRef) (r: string) = ConstEq(l,r)
-// compare column against const, add quotes around constant value
-let (===) (l: ColRef) (r: string) = l ===^ (sqlQuoted r)
-
-let (<=>) (l: ColRef) (r: string) = ConstBinOp("<>", l,r)
-let IsAny (l: ColRef) (r: string) = ConstBinOp("in", l, r )
 
 type LineJoinerFunc = string seq -> string
 
@@ -114,6 +87,12 @@ module LineJoiners =
         sprintf "'%s'" ((String.concat ",\n" lines).Replace("'", "''"))
     let Terminated (lines: string seq) =
         (String.concat "\n" lines) + ";"
+
+// like string join kinda thing
+let interLeave (joiner: 'a) (parts: 'a seq) =
+    parts
+    |> Seq.collect (fun part -> [joiner; part])
+    |> Seq.skip 1
 
 
 type Frag =
@@ -128,8 +107,6 @@ type Frag =
     | NestAs of string*(Frag seq) // (provide alias for nested seg, e.g. (select ID from Emp) MyIds
     | Raw of string
     | RawSyntax of ((SqlSyntax*string) seq) // select string to emit by syntax
-    | WhereS of string
-    | Where of Cond seq
     | OrderBy of string list
     | GroupBy of string list
     | Skip  // skip does not emit a line
@@ -143,7 +120,36 @@ type Frag =
     // 4gl specialities
     | VarDef of (string*DDLType*string) // @name type = value;
 
+and Cond =
+    | ConstEq of ColRef*string
+    | ColsEq of ColRef*ColRef
+    | ConstBinOp of string*ColRef*string
+    | CondCompose of string*(Cond seq)
+
+    with
+        member x.Str =
+            match x with
+            | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value
+            | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
+            | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
+            | CondCompose(op, parts) -> parts |> Seq.map (fun p -> p.Str) |> String.concat (sprintf " %s " op) |> sprintf "(%s)"
+        member x.AsFrag =
+
+            match x with
+            | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value |> Raw
+            | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str |> Raw
+            | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r |> Raw
+            | CondCompose(op, parts) ->
+                parts |> Seq.map (fun p -> p.AsFrag) |> interLeave (Raw op) |> Nest
+
 // functions that look like frags, but generate other frags instead
+
+// where that does no nesting. Deprecate?
+let Where (conds: Cond seq) =
+    let joined = conds |> Seq.map (fun c -> c.Str) |> String.concat " and "
+    Raw <| "where " + joined
+
+let WhereS s = sprintf "where %s" s |> Raw
 
 let Exists (frags: Frag seq) =
     Nest [
@@ -201,11 +207,6 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
     | FromS els -> "from " + colonList els
     | From (Table t) -> "from " + t
     | FromAs (Table t, Table alias) -> sprintf "from %s as %s" t alias
-
-    | WhereS s -> "where " + s
-    | Where conds ->
-        let joined = conds |> Seq.map (fun c -> c.Str) |> String.concat " and "
-        "where " + joined
     | OrderBy els -> "order by " + colonList els
     | GroupBy els -> "group by " + colonList els
     | JoinOn(other: ColRef, this: ColRef, (Table alias), joinKind: string) ->
@@ -376,8 +377,36 @@ type ColRef with
     member l.In r = ConstBinOp("in", l, r)
     member l.Op op r = ConstBinOp(op,l,r)
 
+// operators
+
+module Conds =
+    let Like l r = ConstBinOp("like", l,sqlQuoted r)
+    let In (l: ColRef) (r: string) = ConstBinOp("in", l, r )
+    let And conds = CondCompose("and", conds)
+    let Or conds = CondCompose("or",conds)
+
+    let Where (cond: Cond) =
+        Many [
+            Raw "where"
+            Indent [cond.AsFrag]
+        ]
+
+
+
+// compare column against column
+let (==) (l: ColRef) (r: ColRef) = ColsEq(l,r)
+// compare column against const, user needs to add quotes if needed
+let (===^) (l: ColRef) (r: string) = ConstEq(l,r)
+// compare column against const, add quotes around constant value
+let (===) (l: ColRef) (r: string) = l ===^ (sqlQuoted r)
+
+let (<=>) (l: ColRef) (r: string) = ConstBinOp("<>", l,r)
+let IsAny (l: ColRef) (r: string) = ConstBinOp("in", l, r )
+
+
 // glorious public api
 module Frags =
     let Emit syntax frags =
         serializeSql syntax frags
+
 
