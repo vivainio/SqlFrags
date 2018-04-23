@@ -134,13 +134,10 @@ and Cond =
             | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
             | CondCompose(op, parts) -> parts |> Seq.map (fun p -> p.Str) |> String.concat (sprintf " %s " op) |> sprintf "(%s)"
         member x.AsFrag =
-
             match x with
-            | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value |> Raw
-            | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str |> Raw
-            | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r |> Raw
             | CondCompose(op, parts) ->
                 parts |> Seq.map (fun p -> p.AsFrag) |> interLeave (Raw op) |> Nest
+            | _ -> Raw x.Str
 
 // functions that look like frags, but generate other frags instead
 
@@ -385,6 +382,7 @@ module Conds =
     let And conds = CondCompose("and", conds)
     let Or conds = CondCompose("or",conds)
 
+    // the better WHERE that doesn't assume "and"
     let Where (cond: Cond) =
         Many [
             Raw "where"
