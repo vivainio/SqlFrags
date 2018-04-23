@@ -35,17 +35,20 @@ type Cond =
     | ConstEq of ColRef*string
     | ColsEq of ColRef*ColRef
     | ConstBinOp of string*ColRef*string
+    | CondCompose of string*(Cond seq)
 
 with
     member x.Str = match x with
                    | ConstEq(cr,value) -> sprintf "%s=%s" cr.Str value
                    | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
                    | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
+                   | CondCompose(op, parts) -> parts |> Seq.map (fun p -> p.Str) |> String.concat (sprintf " %s " op) |> sprintf "(%s)"
 
 module Conds =
     let Like l r = ConstBinOp("like", l,sqlQuoted r)
     let In (l: ColRef) (r: string) = ConstBinOp("in", l, r )
-
+    let And conds = CondCompose("and", conds)
+    let Or conds = CondCompose("or",conds)
 
 
 type DDLType =

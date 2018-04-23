@@ -185,6 +185,24 @@ type Tests() =
         r2="hello oracle" |> Assert.IsTrue
 
     [<Case>]
+    static member TestConds() =
+        let e = Table "emp"
+        let conds =
+            Conds.And [
+                e?a.Equals "12"
+                e?b.Equals "13"
+                Conds.Or [
+                    e?c.Equals "14"
+                    e?d.Equals "15"
+                ]
+                Conds.And [
+                    e?e.Equals "16"
+                    e?f.Equals "17"
+                ]
+            ]
+        [ Where [conds]] |> rendersTo "where (emp.a=12 and emp.b=13 and (emp.c=14 or emp.d=15) and (emp.e=16 and emp.f=17))"
+
+    [<Case>]
     static member PlSql() =
         let q =
             [

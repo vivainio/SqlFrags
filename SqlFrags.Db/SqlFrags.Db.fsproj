@@ -12,10 +12,17 @@
 
   <ItemGroup>
     <Compile Include="Db.fs" />
+    <Compile Include="Lab.fs" />
+
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Data.SqlClient" Version="4.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SqlFrags\SqlFrags.fsproj" />
   </ItemGroup>
 
 </Project>

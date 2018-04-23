@@ -144,3 +144,4 @@ module QueryRunner =
         use q = conn.CreateCommand()
         q.CommandText <- sql;
         queryImpl q
+

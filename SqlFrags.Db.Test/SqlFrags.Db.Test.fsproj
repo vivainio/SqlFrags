@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SqlFrags.Db\SqlFrags.Db.fsproj" />
+    <ProjectReference Include="..\SqlFrags\SqlFrags.fsproj" />
   </ItemGroup>
 
 </Project>
