@@ -10,6 +10,15 @@ open SqlFrags.SqlGen
 let connector = Connector(MsSql, ConnectionString [DataSource "localhost"; Catalog "IA"; IntegratedSecurity true ])
 
 
+
+
+module Introspect =
+    type Columns() =
+        member __.T = Table "INFORMATION_SCHEMA.COLUMNS"
+        member x.ColName = x.T?COLUMN_NAME
+        member x.ColDataType = x.T?DATA_TYPE
+
+
 type Test() =
     [<Case>]
     static member Connect() =
@@ -26,6 +35,16 @@ type Test() =
         [
             Raw <| "Select 1"
         ] |> Lab.Bench db "Select 1" 500
+
+        let cols = Introspect.Columns()
+
+
+        [
+            Select [cols.T?COLUMN_NAME.WrapIn("sum") ; cols.T?DATA_TYPE]
+            From cols.T
+            GroupBy ["DATA_TYPE"]
+        ] |> Lab.Dump db
+        Lab.DumpResults()
 
 
 [<EntryPoint>]

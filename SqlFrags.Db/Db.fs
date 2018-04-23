@@ -98,6 +98,11 @@ module RawTableRec =
             for row in trec.Rows do
                 yield (trec.Header |> Array.mapi (fun i hname -> (hname, row.[i])))
         } |> Array.ofSeq
+    let Dump (trec: RawTableRec) =
+        String.concat ";" trec.Header |> printfn "%s"
+        for row in trec.Rows do
+            row |> Array.map (fun o -> o.ToString())  |> String.concat ";" |> printfn "%s"
+        String.concat ";" trec.Header |> printfn "%s"
 
 
 
