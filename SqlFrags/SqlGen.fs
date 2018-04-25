@@ -401,6 +401,16 @@ let (===) (l: ColRef) (r: string) = l ===^ (sqlQuoted r)
 let (<=>) (l: ColRef) (r: string) = ConstBinOp("<>", l,r)
 let IsAny (l: ColRef) (r: string) = ConstBinOp("in", l, r )
 
+module Funcs =
+    let private unary name = sprintf "%s(%s)" name
+    let Count  = unary "count"
+    let Avg = unary "avg"
+    let Sum = unary "sum"
+    let As s alias = sprintf "%s as %s" alias s
+    let Convert typ s = sprintf "convert(%s,%s)" typ s
+    let IsNull replacement s = sprintf "isnull(%s,%s)" s replacement
+    let Replace needle replacement s = sprintf "replace(%s, %s, %s)" s needle replacement
+    let ReplaceQuoted needle replacement s = sprintf "replace(%s, %s, %s)" s (sqlQuoted needle) (sqlQuoted replacement)
 
 // glorious public api
 module Frags =

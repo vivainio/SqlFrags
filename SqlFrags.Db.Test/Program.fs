@@ -15,8 +15,12 @@ let connector = Connector(MsSql, ConnectionString [DataSource "localhost"; Catal
 module Introspect =
     type Columns() =
         member __.T = Table "INFORMATION_SCHEMA.COLUMNS"
-        member x.ColName = x.T?COLUMN_NAME
-        member x.ColDataType = x.T?DATA_TYPE
+        member x.ColName = "COLUMN_NAME"
+        member x.DataType = "DATA_TYPE"
+        member x.MaxLen = "CHARACTER_MAXIMUM_LENGTH"
+    type Tables() =
+        member __.T = Table "INFORMATION_SCHEMA.TABLES"
+        member x.Name = "TABLE_NAME"
 
 
 type Test() =
@@ -38,11 +42,15 @@ type Test() =
 
         let cols = Introspect.Columns()
 
-
         [
-            Select [cols.T?COLUMN_NAME.WrapIn("sum") ; cols.T?DATA_TYPE]
+            SelectS [
+                Funcs.Count cols.ColName |> Funcs.Convert "bigint" |> Funcs.As "countti";
+                cols.DataType |> Funcs.ReplaceQuoted "int" "INTTI"
+            ]
+            //SelectS [ cols.T?DATA_TYPE; ]
+
             From cols.T
-            GroupBy ["DATA_TYPE"]
+            GroupBy [cols.DataType]
         ] |> Lab.Dump db
         Lab.DumpResults()
 

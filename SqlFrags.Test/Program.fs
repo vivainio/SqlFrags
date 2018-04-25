@@ -339,6 +339,14 @@ type Tests() =
             [("bar", "1"); ("foo", "'a'")]; [("bar", "1"); ("foo", "'b'")];
             [("bar", "1"); ("foo", "'defaultval'")]]
         (List.ofSeq l3) = expected |> Assert.IsTrue
+    [<Case>]
+    static member TestFuncs() =
+        let s =
+            "Foo"
+            |> Funcs.IsNull "11" |> Funcs.Avg |> Funcs.Convert "tinyint"
+            |> Funcs.Sum |> Funcs.Count |> Funcs.Replace "'a'" "'b'"
+            |> Funcs.ReplaceQuoted "a" "b" |> Funcs.As "hippie"
+        Assert.AreEqual(s, "replace(replace(count(sum(convert(tinyint,avg(isnull(Foo,11))))), 'a', 'b'), 'a', 'b') as hippie")
 
 [<EntryPoint>]
 let main argv =
