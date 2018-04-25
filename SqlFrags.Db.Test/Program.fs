@@ -10,20 +10,22 @@ open SqlFrags.SqlGen
 let connector = Connector(MsSql, ConnectionString [DataSource "localhost"; Catalog "IA"; IntegratedSecurity true ])
 
 
-
-
 module Introspect =
-    type Columns() =
-        member __.T = Table "INFORMATION_SCHEMA.COLUMNS"
-        member x.ColName = "COLUMN_NAME"
-        member x.DataType = "DATA_TYPE"
-        member x.MaxLen = "CHARACTER_MAXIMUM_LENGTH"
-    type Tables() =
-        member __.T = Table "INFORMATION_SCHEMA.TABLES"
-        member x.Name = "TABLE_NAME"
+    module Columns =
+        let T = Table "INFORMATION_SCHEMA.COLUMNS"
+        let ColName = "COLUMN_NAME"
+        let DataType = "DATA_TYPE"
+        let MaxLen = "CHARACTER_MAXIMUM_LENGTH"
 
+    module Tables =
+        let T = Table "INFORMATION_SCHEMA.TABLES"
+        let Name = "TABLE_NAME"
+
+// alias used in Lab() test
+module cols = Introspect.Columns
 
 type Test() =
+
     [<Case>]
     static member Connect() =
         // replace xx with your own catalog name
@@ -40,18 +42,15 @@ type Test() =
             Raw <| "Select 1"
         ] |> Lab.Bench db "Select 1" 500
 
-        let cols = Introspect.Columns()
-
         [
             SelectS [
                 Funcs.Count cols.ColName |> Funcs.Convert "bigint" |> Funcs.As "countti";
                 cols.DataType |> Funcs.ReplaceQuoted "int" "INTTI"
             ]
-            //SelectS [ cols.T?DATA_TYPE; ]
-
             From cols.T
             GroupBy [cols.DataType]
         ] |> Lab.Dump db
+        // dumps the benchmark results
         Lab.DumpResults()
 
 
