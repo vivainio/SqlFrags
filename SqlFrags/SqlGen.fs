@@ -140,7 +140,14 @@ and Cond =
 
 let colonList strings = String.concat ", " strings
 
-let Columns (cols: ColRef seq) = cols |> Seq.map (fun c -> c.Str) |> TextUtil.Colonize |> TextUtil.TextWrap "  " 75 |> Seq.map Raw |> Many
+// Columns that takes a list of strings
+let ColumnsS (cols: string seq) = cols |> TextUtil.Colonize |> TextUtil.TextWrap "  " 75 |> Seq.map Raw |> Many
+
+// Columns that takes a list of colrefs
+let Columns (cols: ColRef seq) = cols |> Seq.map (fun c -> c.Str) |> ColumnsS
+
+
+
 
 let Where (conds: Cond seq) =
     let joined = conds |> Seq.map (fun c -> c.Str) |> String.concat " and "
@@ -352,8 +359,9 @@ module Typed =
 
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
-    member x.Select cols =  Many [SelectS cols; From x]
-    member x.SelectC cols =  Many [Select cols; From x]
+    member x.Select cols =  Many [
+                                    Raw "select"; ColumnsS cols; From x]
+    member x.SelectC cols =  Many [ Raw "select"; Columns cols; From x]
 
     member x.SelectAll = Raw (sprintf "select * from %s" x.Name)
     member x.Update (updlist: (string*string) seq)=

@@ -3,7 +3,6 @@
 
 open SqlFrags.SqlGen
 open TrivialTestRunner
-open SqlFrags.TextUtil
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> Frags.Emit syntax
@@ -88,7 +87,7 @@ type Tests() =
         countq |> rendersTo "select count(1)\nfrom\n(\n    select *\n    from USER_DATA\n) Users"
 
         let inq = [
-            (Table "TASK").Select ["*"]
+            (Table "TASK").SelectAll
             WhereS "recipient_id in "
             Nest [
                 Select [User.Col("ID")]
@@ -96,7 +95,7 @@ type Tests() =
             ]
         ]
 
-        inq |> rendersTo "select *\nfrom TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
+        inq |> rendersTo "select * from TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
 
         // select stuff with --> and --->
         [ Emp --> [ "Salary"; "Name" ] ]
@@ -104,7 +103,7 @@ type Tests() =
 
         // same with extension method - please use extension methods instead of operators!
         [ Emp.Select [ "Salary"; "Name" ] ]
-        |> rendersTo "select Salary, Name\nfrom employee"
+        |> rendersTo "select\n  Salary, Name\nfrom employee"
 
         [ Emp.SelectAll ]
         |> rendersTo "select * from employee"
