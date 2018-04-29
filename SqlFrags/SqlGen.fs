@@ -372,6 +372,10 @@ module Conds =
     let In (l: ColRef) (r: string) = ConstBinOp("in", l, r )
     let And conds = CondCompose("and", conds)
     let Or conds = CondCompose("or",conds)
+    let Lt l r = ConstBinOp("<", l,r)
+    let Gt l r = ConstBinOp(">", l,r)
+    let Lte l r = ConstBinOp("<=", l,r)
+    let Gte l r = ConstBinOp(">=", l,r)
 
     // the better WHERE that doesn't assume "and"
     let Where (cond: Cond) =
