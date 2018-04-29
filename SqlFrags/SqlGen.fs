@@ -203,7 +203,6 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
                                                          | ColRef (_, col) -> ColRef(Table alias, col)
         let joinType = if joinKind = "" then "inner" else joinKind
         sprintf "%s join %s %s on %s=%s" joinType otherTable alias this.Str aliasedOther.Str
-    | Skip -> ""
     | Raw txt -> txt
     | RawSyntax(rules) ->
         rules |> Seq.find (fun r -> fst r = syntax) |> snd
@@ -215,7 +214,7 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
         | SqlSyntax.Ora -> sprintf "%s %s := %s;" name (DDLCol.typeToString syntax typ) value
         | SqlSyntax.Any -> sprintf "@%s %s = %s;" name (DDLCol.typeToString syntax typ) value
 
-    | Nest _ | NestAs _ | Many _  | LineJoiner _ | Indent _ -> failwith "Should never see subquery at serialization"
+    | Skip _ | Nest _ | NestAs _ | Many _  | LineJoiner _ | Indent _ -> failwith "Should never see subquery at serialization"
 
 
 // the main function for everything
