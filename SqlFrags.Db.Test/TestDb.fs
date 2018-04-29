@@ -49,16 +49,16 @@ type Test() =
                 cols.DataType.Right |> Funcs.ReplaceQuoted "int" "INTTI"
             ]
             GroupBy [cols.DataType.Right]
-        ] |> Lab.Dump db
+        ] |> Lab.Bench db "a" 1
 
         [
             cols.T.SelectC [cols.ColName; cols.DataType]
-        ] |> Lab.Dump db
+        ] |> Lab.Bench db "b" 1
 
         [
             cols.T.SelectC [cols.DataType ]
             Where [Conds.In cols.ColName "('ID')"]
-        ] |> Lab.Dump db
+        ] |> Lab.Bench db "c" 1
 
 
         // dumps the benchmark results
