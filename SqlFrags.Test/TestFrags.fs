@@ -44,7 +44,7 @@ type Tests() =
 
         // this is not legal sql. SqlFrags does absolutely no structure validity checking whatsoever
         let query = [
-            Select <| Emp.Cols ["id";"name"; "salary"; "team"]
+            Emp.SelectC <| Emp.Cols ["id";"name"; "salary"; "team"]
             SelectAs [Emp?Foo, "testalias"]
             From Emp
             WhereS "salary > 1000"
@@ -58,17 +58,16 @@ type Tests() =
             GroupBy ["team"]
             OrderBy ["salary"]
         ]
-        query |> rendersTo "select employee.id, employee.name, employee.salary, employee.team\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\nwhere foo > bar\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
+        query |> rendersTo "select\n  employee.id, employee.name, employee.salary, employee.team\nfrom employee\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\nwhere foo > bar\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
 
         let nested = [
-            SelectS ["*"]
-            Raw "from"
-            NestAs("root",  [
-                            SelectS ["*"]
-                            From User
-            ])
+            Raw "select * from"
+            NestAs("root",
+                [
+                    User.SelectAll
+                ])
         ]
-        nested |> rendersTo "select *\nfrom\n(\n    select *\n    from USER_DATA\n) root"
+        nested |> rendersTo "select * from\n(\n    select * from USER_DATA\n) root"
 
         let values = [ "a","1" ; "b","2"]
         let writes = [ Emp.Insert values ]
@@ -76,30 +75,23 @@ type Tests() =
         writes |> rendersTo "insert into employee (a,b) values (1,2)"
 
         let countq = [
-            SelectS ["count(1)"]
-            Raw "from"
-            NestAs("Users",[
-                            SelectS ["*"]
-                            From User
-            ])
+            Raw "select count(1) from"
+            NestAs("Users",[ User.SelectAll ])
 
         ]
-        countq |> rendersTo "select count(1)\nfrom\n(\n    select *\n    from USER_DATA\n) Users"
+        countq |> rendersTo "select count(1) from\n(\n    select * from USER_DATA\n) Users"
 
         let inq = [
             (Table "TASK").SelectAll
             WhereS "recipient_id in "
             Nest [
-                Select [User.Col("ID")]
-                From User
+                User.SelectC [User?ID]
             ]
         ]
 
-        inq |> rendersTo "select * from TASK\nwhere recipient_id in \n(\n    select USER_DATA.ID\n    from USER_DATA\n)"
+        inq |> rendersTo "select * from TASK\nwhere recipient_id in \n(\n    select\n      USER_DATA.ID\n    from USER_DATA\n)"
 
-        // select stuff with --> and --->
-        [ Emp --> [ "Salary"; "Name" ] ]
-        |> rendersTo "select Salary, Name\nfrom employee"
+
 
         // same with extension method - please use extension methods instead of operators!
         [ Emp.Select [ "Salary"; "Name" ] ]
@@ -108,19 +100,14 @@ type Tests() =
         [ Emp.SelectAll ]
         |> rendersTo "select * from employee"
 
-        [ Emp ---> [ Emp?Salary; Emp?Name ] ]
-        |> rendersTo "select employee.Salary, employee.Name\nfrom employee"
-        // ===^ (where condition without quoting)
         [
-            Emp --> ["*"]
             Where [Emp?ID ===^ "@ID"]
-        ] |> rendersTo "select *\nfrom employee\nwhere employee.ID=@ID"
+        ] |> rendersTo "where employee.ID=@ID"
 
         // === (where condition with quoting)
         [
-            Emp --> ["*"]
             Where [Emp?ID === "jorma"]
-        ] |> rendersTo "select *\nfrom employee\nwhere employee.ID='jorma'"
+        ] |> rendersTo "where employee.ID='jorma'"
 
         [ Emp.Delete ]
         |> rendersTo "delete from employee"

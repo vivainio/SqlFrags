@@ -75,8 +75,6 @@ module DDLCol =
         | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
         | PrimaryKey t -> sprintf "%s PRIMARY KEY" (typeToString syntax t)
 
-// inline operators
-
 
 type LineJoinerFunc = string seq -> string
 
@@ -91,8 +89,6 @@ module LineJoiners =
 
 
 type Frag =
-    | SelectS of string seq
-    | Select of ColRef seq
     | SelectAs of (ColRef*string) seq // every col getsn an alias
     | FromS of string list
     | From of Table
@@ -191,19 +187,8 @@ module Pl =
             Indent frags
             Raw "end;"
         ]
-
-
-// shorthands for SELECTing stuff
-let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]
-let (--->) (l: Table) (rs: ColRef seq) = Many [Select rs; From l]
-
-
 let rec serializeFrag (syntax: SqlSyntax) frag =
     match frag with
-    | SelectS els -> "select " + colonList els
-    | Select cols ->
-        "select " +
-            (cols |> Seq.map (fun c -> c.Str) |> colonList)
     | SelectAs cols ->
         "select " +
             (cols |> Seq.map (fun (c,alias) -> sprintf "%s as %s" c.Str alias) |> colonList)
