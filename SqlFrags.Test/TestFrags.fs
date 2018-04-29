@@ -207,13 +207,24 @@ type Tests() =
         |> rendersTo "where\n    (\n        emp.a=10\n        and\n        emp.b=11\n    )"
 
         [
-            Where [
-                Conds.Gt e?a "10"
-                Conds.Lt e?a "12"
-                Conds.Gte e?b "20"
-                Conds.Lte e?b "40"
-            ]
-        ] |> rendersTo "where emp.a > 10 and emp.a < 12 and emp.b >= 20 and emp.b <= 40"
+            Conds.Where <|
+                Conds.And
+                    [
+                        Conds.Gt e?a "10"
+                        Conds.Lt e?a "12"
+                        Conds.Gte e?b "20"
+                        Conds.Lte e?b "40"
+                    ]
+        ] |> rendersTo "where\n    (\n        emp.a > 10\n        and\n        emp.a < 12\n        and\n        emp.b >= 20\n        and\n        emp.b <= 40\n    )"
+
+        [
+            Conds.Where <|
+                Conds.Exists [
+                    Raw "select 1"
+                ]
+
+        ] |> rendersTo "where\n    exists\n    (\n        select 1\n    )"
+
 
 
     [<Case>]

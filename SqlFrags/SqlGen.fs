@@ -114,6 +114,7 @@ and Cond =
     | ColsEq of ColRef*ColRef
     | ConstBinOp of string*ColRef*string
     | CondCompose of string*(Cond seq)
+    | CondFrag of Frag
 
     with
         member x.Str =
@@ -122,10 +123,14 @@ and Cond =
             | ColsEq(l,r) -> sprintf "%s=%s" l.Str r.Str
             | ConstBinOp(op, l,r) -> sprintf "%s %s %s" l.Str op r
             | CondCompose(op, parts) -> parts |> Seq.map (fun p -> p.Str) |> String.concat (sprintf " %s " op) |> sprintf "(%s)"
+            | CondFrag(f) -> failwithf "Can't emit CondFrag as string: %A" f
+
         member x.AsFrag =
             match x with
             | CondCompose(op, parts) ->
                 parts |> Seq.map (fun p -> p.AsFrag) |> TextUtil.Interleave (Raw op) |> Nest
+            | CondFrag(f) ->
+                f
             | _ -> Raw x.Str
 
 // functions that look like frags, but generate other frags instead
@@ -139,8 +144,6 @@ let ColumnsS (cols: string seq) = cols |> TextUtil.Colonize |> TextUtil.TextWrap
 
 // Columns that takes a list of colrefs
 let Columns (cols: ColRef seq) = cols |> Seq.map (fun c -> c.Str) |> ColumnsS
-
-
 
 
 let Where (conds: Cond seq) =
@@ -376,6 +379,12 @@ module Conds =
     let Gt l r = ConstBinOp(">", l,r)
     let Lte l r = ConstBinOp("<=", l,r)
     let Gte l r = ConstBinOp(">=", l,r)
+    let Exists f =
+        CondFrag <|
+            Many [
+                Raw "exists"
+                Nest f
+            ]
 
     // the better WHERE that doesn't assume "and"
     let Where (cond: Cond) =
