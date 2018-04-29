@@ -55,10 +55,10 @@ type Tests() =
             ]
             JoinOn( Org.Col "ID", Emp.Col "OrgID", Table "OrgAlias", "")
             Where [Emp?Company == Org?Id]
-            GroupBy ["team"]
-            OrderBy ["salary"]
+            GroupBy ["team"; "foo"]
+            OrderBy ["salary asc"; "hello desc"]
         ]
-        query |> rendersTo "select\n  employee.id, employee.name, employee.salary, employee.team\nfrom employee\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\nwhere foo > bar\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by team\norder by salary"
+        query |> rendersTo "select\n  employee.id, employee.name, employee.salary, employee.team\nfrom employee\nselect employee.Foo as testalias\nfrom employee\nwhere salary > 1000\nwhere foo > bar\ninner join organization OrgAlias on employee.OrgID=OrgAlias.ID\nwhere employee.Company=organization.Id\ngroup by\n  team, foo\norder by\n  salary asc, hello desc"
 
         let nested = [
             Raw "select * from"

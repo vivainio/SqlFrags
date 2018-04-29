@@ -98,8 +98,6 @@ type Frag =
     | NestAs of string*(Frag seq) // (provide alias for nested seg, e.g. (select ID from Emp) MyIds
     | Raw of string
     | RawSyntax of ((SqlSyntax*string) seq) // select string to emit by syntax
-    | OrderBy of string list
-    | GroupBy of string list
     | Skip  // skip does not emit a line
     | JoinOn of ColRef*ColRef*Table*string // other, this, correlation name, join type ("LEFT OUTER", "INNER" etc)
     | Many of Frag seq  // many does emit a line, but emits its children instead
@@ -195,8 +193,8 @@ let rec serializeFrag (syntax: SqlSyntax) frag =
     | FromS els -> "from " + colonList els
     | From (Table t) -> "from " + t
     | FromAs (Table t, Table alias) -> sprintf "from %s as %s" t alias
-    | OrderBy els -> "order by " + colonList els
-    | GroupBy els -> "group by " + colonList els
+    //| OrderBy els -> "order by " + colonList els
+    //| GroupBy els -> "group by " + colonList els
     | JoinOn(other: ColRef, this: ColRef, (Table alias), joinKind: string) ->
         let (ColRef(Table otherTable, _)) = other
         let aliasedOther = if alias = "" then other else match other with
@@ -404,6 +402,16 @@ module Funcs =
     let IsNull replacement s = sprintf "isnull(%s,%s)" s replacement
     let Replace needle replacement s = sprintf "replace(%s, %s, %s)" s needle replacement
     let ReplaceQuoted needle replacement s = sprintf "replace(%s, %s, %s)" s (sqlQuoted needle) (sqlQuoted replacement)
+
+
+let private opWithStringColumns op cols =
+    Many [
+        Raw op
+        ColumnsS cols
+    ]
+
+let OrderBy cols = opWithStringColumns "order by" cols
+let GroupBy cols = opWithStringColumns "group by" cols
 
 // glorious public api
 module Frags =
