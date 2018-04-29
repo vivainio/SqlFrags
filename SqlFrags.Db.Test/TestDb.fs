@@ -55,6 +55,11 @@ type Test() =
             cols.T.SelectC [cols.ColName; cols.DataType]
         ] |> Lab.Dump db
 
+        [
+            cols.T.SelectC [cols.DataType ]
+            Where [Conds.In cols.ColName "('ID')"]
+        ] |> Lab.Dump db
+
 
         // dumps the benchmark results
         Lab.DumpResults()

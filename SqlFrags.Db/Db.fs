@@ -134,15 +134,17 @@ module QueryRunner =
             p.Value <- v
             q.Parameters.Add(p) |> ignore
         queryImpl q
+    let AddParameters (cmd: IDbCommand) (values: (string*obj) seq) =
+        for (k,v) in values do
+            let p = cmd.CreateParameter()
+            p.ParameterName <- k
+            p.Value <- v
+            cmd.Parameters.Add(p) |> ignore
 
     let WithParams (conn: IDbConnection) sql (values: (string*obj) seq) =
         use q = conn.CreateCommand()
         q.CommandText <- sql
-        for (k,v) in values do
-            let p = q.CreateParameter()
-            p.ParameterName <- k
-            p.Value <- v
-            q.Parameters.Add(p) |> ignore
+        AddParameters q values
         queryImpl q
 
     let Query (conn: IDbConnection) sql =
