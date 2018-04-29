@@ -44,17 +44,15 @@ type Test() =
 
 
         [
-            SelectS [
+            cols.T.Select [
                 cols.ColName.Right |> Funcs.Count |> Funcs.Convert "bigint" |> Funcs.As "countti";
                 cols.DataType.Right |> Funcs.ReplaceQuoted "int" "INTTI"
             ]
-            From cols.T
             GroupBy [cols.DataType.Right]
         ] |> Lab.Dump db
 
         [
-            Select [cols.ColName; cols.DataType]
-            From cols.T
+            cols.T.SelectC [cols.ColName; cols.DataType]
         ] |> Lab.Dump db
 
 
