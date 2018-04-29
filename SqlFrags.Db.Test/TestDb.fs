@@ -35,7 +35,7 @@ type Test() =
         Assert.AreEqual(1, res.Rows.[0].[0] :?> int)
 
     [<Case>]
-    static member Lab() =
+    static member RunQueries() =
         let db = connector.Connect()
         db.Open()
         [
@@ -55,12 +55,24 @@ type Test() =
             cols.T.SelectC [cols.ColName; cols.DataType]
         ] |> Lab.Bench db "b" 1
 
-        [
-            cols.T.SelectC [cols.DataType ]
-            Where [Conds.In cols.ColName "('ID')"]
-        ] |> Lab.Bench db "c" 1
+        let query =
+            [
+                cols.T.SelectC [cols.ColName; cols.DataType ]
+                Conds.Where <|
+                    Conds.And [
+                        Conds.In cols.ColName "(@a)"
+                        Conds.In cols.DataType "(@b,@c)"
+                    ]
 
+            ] |> Frags.Emit SqlSyntax.Any
 
+        let result =
+            QueryRunner.WithParams db query [
+                "a",box "ID"
+                "b", box "varchar"
+                "c", box "nvarchar"
+            ]
+        printfn "result %A" result
         // dumps the benchmark results
         Lab.DumpResults()
 
