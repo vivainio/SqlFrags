@@ -1,5 +1,9 @@
-﻿open SqlFrags.SqlGen
+﻿module SqlFrags.Test
+
+
+open SqlFrags.SqlGen
 open TrivialTestRunner
+open SqlFrags.TextUtil
 
 let rendersToSyntax syntax expected (frags: Frag list)  =
     let rendered = frags |> Frags.Emit syntax
@@ -130,6 +134,11 @@ type Tests() =
             Where [Emp?ID.Op "<" "12"]
 
         ] |> rendersTo "where employee.ID=@bar\nwhere employee.ID='bar'\nwhere employee.ID=organization.ID\nwhere employee.ID in [1,2]\nwhere employee.ID < 12"
+
+        [
+            Raw "select distinct"
+            Columns [Emp?ID; Emp?Name]
+        ] |> rendersTo "select distinct\n  employee.ID, employee.Name"
 
 
     [<Case>]
@@ -347,6 +356,20 @@ type Tests() =
             |> Funcs.Sum |> Funcs.Count |> Funcs.Replace "'a'" "'b'"
             |> Funcs.ReplaceQuoted "a" "b" |> Funcs.As "hippie"
         Assert.AreEqual(s, "replace(replace(count(sum(convert(tinyint,avg(isnull(Foo,11))))), 'a', 'b'), 'a', 'b') as hippie")
+    [<Case>]
+    static member TestTextUtil() =
+        let emp = Table "employee"
+        let wrapped = TextUtil.TextWrap "-" 10 (Array.replicate 10 "hey!") |> String.concat "&"
+        Assert.AreEqual(wrapped, "-hey!hey!hey!&-hey!hey!hey!&-hey!hey!hey!&-hey!")
+        let il = TextUtil.Interleave 777 [1;2;3;4] |> List.ofSeq
+        Assert.AreEqual([1;777;2;777;3;777;4],il)
+        let manycols = Array.replicate 20 emp?a
+        let c =
+            [
+                Columns manycols
+            ] |> rendersTo "  employee.a, employee.a, employee.a, employee.a, employee.a, employee.a, employee.a\n  , employee.a, employee.a, employee.a, employee.a, employee.a, employee.a, employee.a\n  , employee.a, employee.a, employee.a, employee.a, employee.a, employee.a"
+
+        ()
 
 [<EntryPoint>]
 let main argv =

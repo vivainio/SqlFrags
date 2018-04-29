@@ -13,9 +13,9 @@ let connector = Connector(MsSql, ConnectionString [DataSource "localhost"; Catal
 module Introspect =
     module Columns =
         let T = Table "INFORMATION_SCHEMA.COLUMNS"
-        let ColName = "COLUMN_NAME"
-        let DataType = "DATA_TYPE"
-        let MaxLen = "CHARACTER_MAXIMUM_LENGTH"
+        let ColName = T?COLUMN_NAME
+        let DataType = T?DATA_TYPE
+        let MaxLen = T?CHARACTER_MAXIMUM_LENGTH
 
     module Tables =
         let T = Table "INFORMATION_SCHEMA.TABLES"
@@ -42,14 +42,22 @@ type Test() =
             Raw <| "Select 1"
         ] |> Lab.Bench db "Select 1" 500
 
+
         [
             SelectS [
-                Funcs.Count cols.ColName |> Funcs.Convert "bigint" |> Funcs.As "countti";
-                cols.DataType |> Funcs.ReplaceQuoted "int" "INTTI"
+                cols.ColName.Right |> Funcs.Count |> Funcs.Convert "bigint" |> Funcs.As "countti";
+                cols.DataType.Right |> Funcs.ReplaceQuoted "int" "INTTI"
             ]
             From cols.T
-            GroupBy [cols.DataType]
+            GroupBy [cols.DataType.Right]
         ] |> Lab.Dump db
+
+        [
+            Select [cols.ColName; cols.DataType]
+            From cols.T
+        ] |> Lab.Dump db
+
+
         // dumps the benchmark results
         Lab.DumpResults()
 

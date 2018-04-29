@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TextUtil.fs" />
     <Compile Include="SqlGen.fs" />
   </ItemGroup>
 

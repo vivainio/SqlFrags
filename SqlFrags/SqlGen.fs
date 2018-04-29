@@ -88,11 +88,6 @@ module LineJoiners =
     let Terminated (lines: string seq) =
         (String.concat "\n" lines) + ";"
 
-// like string join kinda thing
-let interLeave (joiner: 'a) (parts: 'a seq) =
-    parts
-    |> Seq.collect (fun part -> [joiner; part])
-    |> Seq.skip 1
 
 
 type Frag =
@@ -136,12 +131,17 @@ and Cond =
         member x.AsFrag =
             match x with
             | CondCompose(op, parts) ->
-                parts |> Seq.map (fun p -> p.AsFrag) |> interLeave (Raw op) |> Nest
+                parts |> Seq.map (fun p -> p.AsFrag) |> TextUtil.Interleave (Raw op) |> Nest
             | _ -> Raw x.Str
 
 // functions that look like frags, but generate other frags instead
 
-// where that does no nesting. Deprecate?
+// WHERE that does no nesting. Deprecate?
+
+let colonList strings = String.concat ", " strings
+
+let Columns (cols: ColRef seq) = cols |> Seq.map (fun c -> c.Str) |> TextUtil.Colonize |> TextUtil.TextWrap "  " 75 |> Seq.map Raw |> Many
+
 let Where (conds: Cond seq) =
     let joined = conds |> Seq.map (fun c -> c.Str) |> String.concat " and "
     Raw <| "where " + joined
@@ -190,7 +190,6 @@ module Pl =
 let (-->) (l: Table) (r: string list) = Many [SelectS r; From l]
 let (--->) (l: Table) (rs: ColRef seq) = Many [Select rs; From l]
 
-let colonList strings = String.concat ", " strings
 
 let rec serializeFrag (syntax: SqlSyntax) frag =
     match frag with
@@ -354,6 +353,8 @@ module Typed =
 type Table with
     member x.Delete = Raw (sprintf "delete from %s" x.Name)
     member x.Select cols =  Many [SelectS cols; From x]
+    member x.SelectC cols =  Many [Select cols; From x]
+
     member x.SelectAll = Raw (sprintf "select * from %s" x.Name)
     member x.Update (updlist: (string*string) seq)=
         let updates = updlist |> Seq.map (fun (k,v) -> sprintf "%s = %s" k v) |> String.concat ", "
