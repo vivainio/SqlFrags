@@ -1,5 +1,7 @@
 # SqlFrags - a SQL generator for F#
 
+[![Build Status](https://dev.azure.com/ville0567/ville/_apis/build/status/vivainio.SqlFrags?branchName=master)](https://dev.azure.com/ville0567/ville/_build/latest?definitionId=1&branchName=master)
+
 ## The problem:
 
 Tools like Dapper make it easy to materialize objects, but you need to write SQL strings by hand.
