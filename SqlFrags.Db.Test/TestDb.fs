@@ -2,14 +2,18 @@
 open TrivialTestRunner
 open SqlFrags.Db
 open DbConnector
+open SqlFrags.Db
 open SqlFrags.Db.QueryRunner
 open SqlFrags.SqlGen
+open System.Data.SQLite
 
 let connector =
-    Connector(MsSql,
-              ConnectionString [ DataSource "localhost"
-                                 Catalog "IA"
-                                 IntegratedSecurity true ])
+    let provider = typeof<System.Data.SQLite.SQLiteConnection>.AssemblyQualifiedName
+    Connector(provider, ConnectionString [
+        DataSource "testdb.db"
+        Version 3
+        Compress
+    ])
 
 module Introspect =
     module Columns =
@@ -21,6 +25,7 @@ module Introspect =
     module Tables =
         let T = Table "INFORMATION_SCHEMA.TABLES"
         let Name = "TABLE_NAME"
+        let Master = Table "sqlite_master"
 
 // alias used in Lab() test
 module cols = Introspect.Columns
@@ -33,8 +38,21 @@ type Test() =
         let db = connector.Connect()
         db.Open()
         let res = Query db "select 1"
-        Assert.AreEqual(1, res.Rows.[0].[0] :?> int)
+        Assert.AreEqual(1L, res.Rows.[0].[0] :?> int64)
 
+    [<Case>]    
+    static member Insert() =
+        let db = connector.Connect()
+        db.Open()
+        let t1 = Table "two"
+        let query =
+            [
+                Alter.CreateTable t1 [
+                    "Name", Text
+                    "Address", Text
+                ]
+            ]|> Frags.Emit SqlSyntax.Any
+        QueryRunner.Query db query        
     [<Case>]
     static member RunQueries() =
         let db = connector.Connect()
@@ -66,7 +84,10 @@ type Test() =
 
 [<EntryPoint>]
 let main argv =
+    TRunner.RunTests()
+    
     TRunner.AddTests<Test>()
     TRunner.RunTests()
     TRunner.ReportAll()
     0 // return an integer exit code
+                                                                                                    
