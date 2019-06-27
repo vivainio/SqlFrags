@@ -3,7 +3,7 @@ from __future__ import print_function
 import os,shutil
 
 prjdir = "SqlFrags"
-version = "3.0.0.0"
+version = "3.1.0.0"
 def c(s):
     print(">",s)
     err = os.system(s)
