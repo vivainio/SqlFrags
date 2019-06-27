@@ -3,6 +3,7 @@ module SqlFrags.SqlGen
 type SqlSyntax =
     | Any
     | Ora
+    | My
 
 type Table =
     | Table of string
@@ -68,11 +69,11 @@ module DDLCol =
         | VarChar c ->
             match syntax with
             | Ora -> sprintf "nvarchar2(%d)" c
-            | Any -> sprintf "varchar(%d)" c
+            | Any | SqlSyntax.My -> sprintf "varchar(%d)" c
         | Number(a, b) ->
             match syntax with
             | Ora -> sprintf "number(%d,%d)" a b
-            | Any -> sprintf "decimal(%d,%d)" a b
+            | Any | SqlSyntax.My -> sprintf "decimal(%d,%d)" a b
         | Text -> "text"
         | NotNull t -> sprintf "%s NOT NULL" (typeToString syntax t)
         | PrimaryKey t -> sprintf "%s PRIMARY KEY" (typeToString syntax t)
@@ -173,7 +174,10 @@ let Exists(frags : Frag seq) =
            Nest frags ]
 
 let Page offset limit =
-    Raw <| sprintf "offset %d rows fetch next %d rows only" offset limit
+    RawSyntax [ 
+        SqlSyntax.Any, sprintf "offset %d rows fetch next %d rows only" offset limit
+        SqlSyntax.My, sprintf "limit %d,%d" offset limit
+    ]
 
 // pl/sql, tsql and "nice" stuff like that
 module Pl =
@@ -225,7 +229,9 @@ let rec serializeFrag (syntax : SqlSyntax) frag =
     | Raw txt -> txt
     | RawSyntax(rules) ->
         rules
-        |> Seq.find (fun r -> fst r = syntax)
+        |> Seq.tryFind (fun r -> fst r = syntax)
+        // if no exact match, use SqlSyntax.Any version
+        |> Option.defaultValue (Seq.find (fun r -> fst r = SqlSyntax.Any) rules)
         |> snd
     | ColDef(name, typ) -> sprintf "%s %s" name (DDLCol.typeToString syntax typ)
     | TypeName typ -> DDLCol.typeToString syntax typ
@@ -233,7 +239,7 @@ let rec serializeFrag (syntax : SqlSyntax) frag =
         match syntax with
         | SqlSyntax.Ora ->
             sprintf "%s %s := %s;" name (DDLCol.typeToString syntax typ) value
-        | SqlSyntax.Any ->
+        | SqlSyntax.Any | SqlSyntax.My ->
             sprintf "@%s %s = %s;" name (DDLCol.typeToString syntax typ) value
     | Skip _
     | Nest _

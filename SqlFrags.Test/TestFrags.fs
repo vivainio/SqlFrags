@@ -136,6 +136,14 @@ type Tests() =
         let r2 = r |> Frags.Emit SqlSyntax.Ora
         r1 = "hello sql" |> Assert.IsTrue
         r2 = "hello oracle" |> Assert.IsTrue
+        // ensure fallback to Any
+        r |> rendersToSyntax SqlSyntax.My "hello sql"
+
+        let paging = [ Page 10 20 ]
+        paging |> rendersToSyntax SqlSyntax.Any "offset 10 rows fetch next 20 rows only"
+        paging |> rendersToSyntax SqlSyntax.Ora "offset 10 rows fetch next 20 rows only"
+        paging |> rendersToSyntax SqlSyntax.My "limit 10,20"
+       
 
     [<Case>]
     static member TestConds() =
