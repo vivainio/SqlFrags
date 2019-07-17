@@ -49,10 +49,10 @@ You can do nested subqueries:
 
 ```fsharp
 let nested = [
-    SelectS ["*"]
+    Raw "select *"
     Raw "from"
     NestAs("root",  [
-                    SelectS ["*"]
+                    Raw "select *" 
                     From User
     ])
 ]
@@ -104,7 +104,7 @@ If you wanted "outer", just pass "outer" as the last argument to JoinOn (empty s
 And what are those "Many" and Skip parts? They are provided for convenience, when splicing sublists in programmatically
 generated queries.
 
-There are some overloaded operators and extension methods to simplify selectand where clauses:
+There are some overloaded operators and extension methods to simplify select and where clauses:
 
 ```fsharp
         // select stuff with --> and --->
