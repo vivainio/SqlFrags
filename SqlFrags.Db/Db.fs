@@ -45,6 +45,9 @@ module DbConnector =
         | UserId of string
         | Password of string
         | IntegratedSecurity of bool
+        | Version of int
+        | Compress
+        | New
         member x.Str =
             match x with
             | Provider s -> "Provider=" + s
@@ -55,6 +58,10 @@ module DbConnector =
             | ProviderAccess -> "Provider=Microsoft.ACE.OLEDB.12.0"
             | Password s -> "Password=" + s
             | UserId s -> "User Id=" + s
+            | Version v -> sprintf "Version=%d" v
+            | Compress -> "Compress=True"
+            | New -> "New=True"
+            
 
     let ConnectionString(parts : ConnectionStringFrag seq) =
         parts
