@@ -45,17 +45,19 @@ where foo > bar
 
 That should make it a bit harder to screw up.
 
+Simple "select ... from ..." is simple (with Table extension methods):
+```fsharp
+let fields = [ Emp.Select [ "Salary"; "Name" ] ]
+let all = [ Emp.SelectAll ]
+```
+
 You can do nested subqueries:
 
 ```fsharp
-let nested = [
-    SelectS ["*"]
-    Raw "from"
-    NestAs("root",  [
-                    SelectS ["*"]
-                    From User
-    ])
-]
+let nested =
+    [ Raw "select * from"
+        NestAs("root", [ User.SelectAll ]) ]
+
 ```
 
 This gives you indented, parenthesized SQL (aliased as you specified):
@@ -76,21 +78,19 @@ Emitting completely illegal SQL is fine, SqlFrags is not one to second guess you
 you feed it:
 
 ```fsharp
-let query = [
-    Select <| Emp.Cols ["id";"name"; "salary"; "team"]
-    SelectAs [Emp?Foo, "testalias"]
-    From Emp
-    WhereS "salary > 1000"
-    Many [
-        Skip
-        WhereS "foo > bar"
-        Skip
-    ]
-    JoinOn( Org.Col "ID", Emp.Col "OrgID", Table "OrgAlias", "")
-    Where [Emp?Company == Org?Id]
-    GroupBy ["team"]
-    OrderBy ["salary"]
-]
+let query =
+    [ Emp.SelectC <| Emp.Cols [ "id"; "name"; "salary"; "team" ]
+        SelectAs [ Emp?Foo, "testalias" ]
+        From Emp
+        WhereS "salary > 1000"
+        Many [ Skip
+                WhereS "foo > bar"
+                Skip ]
+        JoinOn(Org.Col "ID", Emp.Col "OrgID", Table "OrgAlias", "")
+        Where [ Emp?Company == Org?Id ]
+        GroupBy [ "team"; "foo" ]
+        OrderBy [ "salary asc"; "hello desc" ] ]
+
 ```
 
 Did you you see that JoinOn? It does:
@@ -145,6 +145,12 @@ There are some overloaded operators and extension methods to simplify selectand 
 
 
 ## FAQ
+
+### This README is out of date
+
+Maybe. See the [test case](https://github.com/vivainio/SqlFrags/blob/master/SqlFrags.Test/TestFrags.fs) for up
+to date syntax.
+
 
 ### Why SqlFrags when there are millions of other SQL generators on the web?
 
